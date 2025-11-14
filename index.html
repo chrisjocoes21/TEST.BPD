@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BPD v28.1 - SIN SCROLL EN MODALES, HERO DE SLIDES INDIVIDUALES -->
+<!-- BPD v28.2 - HERO COMPACTO Y ACADÉMICO -->
 <html lang="es" class="h-full bg-slate-50 overflow-hidden">
 <head>
     <meta charset="UTF-8">
@@ -212,14 +212,17 @@
                     <!-- HERO SECTION DINÁMICA (CARRUSEL) -->
                     <div id="hero-carousel-container" class="lg:col-span-12 relative overflow-hidden rounded-xl shadow-lg shadow-dorado-soft/10 border border-amber-200 hero-carousel-container">
                         <!-- El track contiene todos los slides y maneja el deslizamiento horizontal -->
-                        <div id="hero-carousel" class="w-full h-full relative hero-carousel-track" style="min-height: 300px;">
+                        <!-- CAMBIO: min-height reducido de 300px a 250px -->
+                        <div id="hero-carousel" class="w-full h-full relative hero-carousel-track" style="min-height: 250px;">
                             
                             <!-- SLIDE 1 (HOME): DATOS CLAVE Y CTA -->
-                            <div class="hero-slide bg-slide-main text-white p-8 md:p-12 flex items-center justify-between">
+                            <!-- CAMBIO: Padding reducido de p-8 md:p-12 a p-6 md:p-8 -->
+                            <div class="hero-slide bg-slide-main text-white p-6 md:p-8 flex items-center justify-between">
                                 <!-- Zona Izquierda: Datos Clave -->
                                 <div class="w-full lg:w-3/4 text-left max-w-4xl mr-4">
+                                    <!-- CAMBIO: Frase más académica -->
                                     <p class="text-base font-semibold opacity-90 mb-1">
-                                        ¡Tu futuro financiero comienza aquí!
+                                        Fomentando la educación financiera y el éxito académico.
                                     </p>
                                     <h2 class="text-4xl md:text-5xl font-extrabold mb-3">
                                         Banco del Pincel Dorado
@@ -227,10 +230,11 @@
                                     <p class="text-xl md:text-2xl opacity-90 mb-4">
                                         "Donde el esfuerzo académico tiene su recompensa"
                                     </p>
+                                    <!-- CAMBIO: Lista de productos directa, sin subtemas y sin "P2P" -->
                                     <ul class="space-y-1 text-sm md:text-lg font-medium opacity-90 list-disc list-inside">
-                                        <li><span class="font-bold">Productos Clave:</span> Préstamos Flexibles y Depósitos de Alto Rendimiento.</li>
-                                        <li><span class="font-bold">Servicio:</span> Transferencias P2P sin comisiones entre usuarios.</li>
-                                        <li><span class="font-bold">Meta:</span> Fomentar el ahorro, la inversión y la gestión responsable.</li>
+                                        <li>Préstamos Flexibles</li>
+                                        <li>Depósitos de Alto Rendimiento</li>
+                                        <li>Transferencias entre Cuentas</li>
                                     </ul>
                                 </div>
                                 <!-- Zona Derecha: Botón CTA -->
@@ -252,18 +256,23 @@
                             </div>
                             
                             <!-- SLIDE 2: DETALLES P2P -->
-                            <div class="hero-slide bg-slate-50 text-slate-800 p-8 md:p-12 flex flex-col">
+                            <!-- CAMBIO: Padding reducido de p-8 md:p-12 a p-6 md:p-8 -->
+                            <div class="hero-slide bg-slate-50 text-slate-800 p-6 md:p-8 flex flex-col">
                                 <div class="w-full max-w-4xl">
-                                    <h2 class="text-2xl font-bold color-dorado-main mb-4">Portal de Transferencias P2P</h2>
+                                    <!-- CAMBIO: Título sin "P2P" -->
+                                    <h2 class="text-2xl font-bold color-dorado-main mb-4">Portal de Transferencias entre Cuentas</h2>
                                     <div id="slide-p2p-content" class="space-y-4 text-slate-700">
-                                        <p><strong>Propósito:</strong> Intercambio directo de Pinceles (ℙ) entre alumnos. Fomenta el comercio y la economía interna.</p>
+                                        <!-- CAMBIO: Propósito más académico -->
+                                        <p><strong>Propósito:</strong> Facilitar el intercambio de valor (ℙ) entre estudiantes, promoviendo una economía colaborativa en el entorno académico.</p>
                                         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-                                            <li><span class="font-bold">Irrevocabilidad:</span> Toda Transacción P2P confirmada es definitiva.</li>
+                                            <!-- CAMBIO: "P2P" eliminado de la descripción -->
+                                            <li><span class="font-bold">Irrevocabilidad:</span> Toda Transferencia confirmada es definitiva.</li>
                                             <li><span class="font-bold">Costo Operacional:</span> Impuesto/comisión del 5% sobre el monto enviado.</li>
                                             <li><span class="font-bold">Seguridad:</span> Requiere la Clave P2P personal e intransferible.</li>
                                             <li><span class="font-bold">Regulación:</span> Uso estrictamente prohibido para fraude o lavado de activos.</li>
                                         </ul>
                                     </div>
+                                    <!-- CAMBIO: Botones con ubicación estandarizada (justify-between) -->
                                     <div class="flex justify-between mt-6">
                                         <button onclick="AppUI.goToHeroSlide(0)" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
                                             &#8249; Inicio
@@ -276,11 +285,13 @@
                             </div>
 
                             <!-- SLIDE 3: DETALLES PRÉSTAMOS -->
-                            <div class="hero-slide bg-slate-50 text-slate-800 p-8 md:p-12 flex flex-col">
+                            <!-- CAMBIO: Padding reducido de p-8 md:p-12 a p-6 md:p-8 -->
+                            <div class="hero-slide bg-slate-50 text-slate-800 p-6 md:p-8 flex flex-col">
                                 <div class="w-full max-w-4xl">
                                     <h2 class="text-2xl font-bold color-dorado-main mb-4">Préstamos Flexibles</h2>
                                     <div id="slide-prestamos-content" class="space-y-4 text-slate-700">
-                                        <p><strong>Propósito:</strong> Proporcionar capital líquido a corto plazo a estudiantes elegibles.</p>
+                                        <!-- CAMBIO: Propósito más académico -->
+                                        <p><strong>Propósito:</strong> Ofrecer liquidez a corto plazo para que los estudiantes puedan gestionar sus proyectos y necesidades académicas.</p>
                                         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
                                             <li><span class="font-bold">Montos:</span> Desde 10,000 ℙ hasta 150,000 ℙ.</li>
                                             <li><span class="font-bold">Plazos:</span> De 3 a 21 días.</li>
@@ -288,9 +299,10 @@
                                             <li><span class="font-bold">Elegibilidad:</span> Requiere saldo positivo y capacidad de pago (monto no debe exceder el 50% del saldo actual).</li>
                                         </ul>
                                     </div>
+                                    <!-- CAMBIO: Botones con ubicación estandarizada (justify-between) y texto actualizado ("P2P" -> "Transferencias") -->
                                     <div class="flex justify-between mt-6">
                                         <button onclick="AppUI.goToHeroSlide(1)" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
-                                            &#8249; P2P
+                                            &#8249; Transferencias
                                         </button>
                                         <button onclick="AppUI.goToHeroSlide(3)" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-amber-600 text-amber-600 hover:bg-amber-50 transition-colors">
                                             Depósitos &#8250;
@@ -300,23 +312,28 @@
                             </div>
 
                             <!-- SLIDE 4: DETALLES DEPÓSITOS -->
-                            <div class="hero-slide bg-slate-50 text-slate-800 p-8 md:p-12 flex flex-col">
+                            <!-- CAMBIO: Padding reducido de p-8 md:p-12 a p-6 md:p-8 -->
+                            <div class="hero-slide bg-slate-50 text-slate-800 p-6 md:p-8 flex flex-col">
                                 <div class="w-full max-w-4xl">
                                     <h2 class="text-2xl font-bold color-dorado-main mb-4">Depósitos Flexibles (Inversión)</h2>
                                     <div id="slide-depositos-content" class="space-y-4 text-slate-700">
-                                        <p><strong>Propósito:</strong> Permitir a los alumnos invertir su capital para generar un rendimiento a un plazo fijo.</p>
+                                        <!-- CAMBIO: Propósito más académico -->
+                                        <p><strong>Propósito:</strong> Incentivar el ahorro y la planificación financiera, permitiendo a los estudiantes generar rendimientos sobre su esfuerzo académico.</p>
                                         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
                                             <li><span class="font-bold">Monto Mínimo:</span> 50,000 ℙ.</li>
                                             <li><span class="font-bold">Plazos:</span> De 7 a 30 días.</li>
                                             <li><span class="font-bold">Tasa Base:</span> 5% de interés base, más un bono diario por plazo.</li>
                                             <li><span class="font-bold">Condición:</span> Fondos congelados hasta el vencimiento. No se puede invertir con un préstamo activo.</li>
-                                            <li><span class="font-bold">Tributación:</span> Intereses generados exentos de impuesto (0% de retención).</li>
+                                            <!-- CAMBIO: Línea de Tributación eliminada -->
                                         </ul>
                                     </div>
-                                    <div class="flex justify-start mt-6">
+                                    <!-- CAMBIO: Botones con ubicación estandarizada (justify-between) y espaciador para alinear -->
+                                    <div class="flex justify-between mt-6">
                                         <button onclick="AppUI.goToHeroSlide(2)" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
                                             &#8249; Préstamos
                                         </button>
+                                        <!-- Espaciador para alinear el botón a la izquierda, igual que los otros slides -->
+                                        <span></span>
                                     </div>
                                 </div>
                             </div>
@@ -385,8 +402,9 @@
                 </div>
                 <div class="flex border-b border-slate-200 px-4 overflow-x-auto">
                     <!-- Pestañas para P2P, Préstamos y Depósitos -->
+                    <!-- CAMBIO: "Transferencia P2P" -> "Transferencia" -->
                     <button data-tab="p2p_transfer" class="tab-btn active-tab whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 border-amber-600 text-amber-600 transition-colors hover:bg-slate-100">
-                        Transferencia P2P
+                        Transferencia
                     </button>
                     <button data-tab="prestamo_flex" class="tab-btn whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-700 transition-colors hover:bg-slate-100">
                         Solicitar Préstamo
