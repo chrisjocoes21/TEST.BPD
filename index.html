@@ -53,13 +53,35 @@
             font-weight: 600; /* Semibold para un look bancario */
             text-align: center;
         }
+        
+        /* Ajuste para el contenedor del Hero para permitir el deslizamiento (Slide) */
+        .hero-carousel-track {
+            display: flex; /* Necesario para la animación de deslizamiento */
+            transition: transform 0.5s ease-in-out;
+            height: 100%; /* Asegura que la pista ocupe la altura del contenedor */
+        }
+        .hero-carousel-container {
+            overflow: hidden; /* Oculta los slides fuera de vista */
+        }
+        .hero-slide {
+            flex-shrink: 0; /* Evita que los slides se contraigan */
+            width: 100%; /* Cada slide ocupa el 100% del ancho del carrusel */
+            position: relative !important; /* Necesario para que flexbox funcione con ancho fijo */
+            inset: auto !important; /* Deshabilitamos el inset: 0 del CSS externo para usar flexbox */
+            opacity: 1 !important; /* Deshabilitamos la opacidad y dejamos que el transform: translateX maneje el cambio */
+            transition: none !important; /* Deshabilitamos la transición de opacidad del CSS externo */
+            pointer-events: auto !important; /* Siempre es accesible, el scroll se maneja por el track */
+        }
+        
     </style>
 </head>
 <body class="h-full overflow-hidden text-slate-800"> 
     <div id="app-container" class="flex h-full">
         
+        <!-- Overlay para cerrar la sidebar en móvil -->
         <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/20 z-30 hidden transition-opacity opacity-0 lg:hidden"></div>
 
+        <!-- Trigger para la animación hover en desktop (lg:block) -->
         <div id="sidebar-hover-trigger" class="fixed inset-y-0 left-0 w-4 z-40 hidden lg:block"></div>
 
         <!-- 1. Barra Lateral de Navegación -->
@@ -158,11 +180,12 @@
                         <!-- Botones Principales -->
                         <div class="flex flex-col justify-between gap-4 px-3 bg-white rounded-xl shadow-lg shadow-dorado-soft/10 border border-amber-200 p-4 h-full">
                             <!-- Timer -->
+                            <!-- Se eliminan los w-8 para que el contador use el espacio disponible de forma más fluida -->
                             <div id="countdown-timer" class="flex-shrink-0 text-sm font-medium text-slate-700 flex items-baseline gap-2 justify-center">
-                                <span id="days" class="text-xl font-bold color-dorado-main w-8 text-right">00</span><span class="text-xs text-slate-500 uppercase -ml-1">Días</span>
-                                <span id="hours" class="text-xl font-bold color-dorado-main w-8 text-right">00</span><span class="text-xs text-slate-500 uppercase -ml-1">Horas</span>
-                                <span id="minutes" class="text-xl font-bold color-dorado-main w-8 text-right">00</span><span class="text-xs text-slate-500 uppercase -ml-1">Minutos</span>
-                                <span id="seconds" class="text-xl font-bold color-dorado-main w-8 text-right">00</span><span class="text-xs text-slate-500 uppercase -ml-1">Segundos</span>
+                                <span id="days" class="text-xl font-bold color-dorado-main text-right">00</span><span class="text-xs text-slate-500 uppercase -ml-1">Días</span>
+                                <span id="hours" class="text-xl font-bold color-dorado-main text-right">00</span><span class="text-xs text-slate-500 uppercase -ml-1">Horas</span>
+                                <span id="minutes" class="text-xl font-bold color-dorado-main text-right">00</span><span class="text-xs text-slate-500 uppercase -ml-1">Minutos</span>
+                                <span id="seconds" class="text-xl font-bold color-dorado-main text-right">00</span><span class="text-xs text-slate-500 uppercase -ml-1">Segundos</span>
                             </div>
                             <!-- Mensaje Tienda -->
                             <div id="store-message" class="hidden w-full text-center text-slate-800 font-semibold">
@@ -188,16 +211,19 @@
                 <div id="home-modules-grid" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
                     
                     <!-- HERO SECTION DINÁMICA (CARRUSEL) -->
-                    <div id="hero-carousel-container" class="lg:col-span-12 relative overflow-hidden rounded-xl shadow-lg shadow-dorado-soft/10 border border-amber-200">
-                        <div id="hero-carousel" class="w-full h-full relative" style="min-height: 300px;">
-                            <!-- Las diapositivas se inyectarán aquí por JS y se controlarán por opacity/transition -->
-                            <!-- Slide Placeholder -->
-                            <div class="hero-slide active-slide bg-gradient-to-r from-amber-500 to-amber-600 text-white p-8 md:p-12 flex items-center transition-opacity duration-1000 ease-in-out">
-                                <div>
-                                    <h2 class="text-3xl md:text-4xl font-extrabold mb-3">
+                    <!-- Se añade la clase hero-carousel-container para manejar el overflow y ocultar los slides -->
+                    <div id="hero-carousel-container" class="lg:col-span-12 relative overflow-hidden rounded-xl shadow-lg shadow-dorado-soft/10 border border-amber-200 hero-carousel-container">
+                        <!-- El track contiene todos los slides y maneja el deslizamiento horizontal -->
+                        <div id="hero-carousel" class="w-full h-full relative hero-carousel-track" style="min-height: 300px;">
+                            <!-- Las diapositivas se inyectarán aquí por JS y se controlarán por transform: translateX() -->
+                            <!-- Slide Placeholder (El JS inyectará el resto, pero ajustamos el diseño base) -->
+                            <div class="hero-slide bg-gradient-to-r from-amber-500 to-amber-600 text-white p-8 md:p-12 flex items-center">
+                                <!-- AJUSTES: El texto usa más espacio, está centrado y es más grande -->
+                                <div class="w-full max-w-4xl mx-auto text-center">
+                                    <h2 class="text-4xl md:text-5xl font-extrabold mb-3">
                                         Banco del Pincel Dorado
                                     </h2>
-                                    <p class="text-lg md:text-xl opacity-90">
+                                    <p class="text-xl md:text-2xl opacity-90">
                                         Cargando promociones magistrales y el balance de tu economía.
                                     </p>
                                 </div>
@@ -715,8 +741,9 @@
                                 Plazo de Pago: 
                                 <span id="prestamo-plazo-display" class="font-bold color-dorado-main">3 Días</span>
                             </label>
+                            <!-- CLASE DE SLIDER ELIMINADA: range-slider-thumb-amber -->
                             <input type="range" id="prestamo-plazo-input" min="3" max="21" value="3"
-                                class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer range-slider-thumb-amber">
+                                class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                             <div class="flex justify-between text-xs text-slate-500 mt-1">
                                 <span>3 Días</span>
                                 <span>21 Días</span>
@@ -806,8 +833,9 @@
                                 Plazo en Días: 
                                 <span id="deposito-plazo-display" class="font-bold color-dorado-main">7 Días</span>
                             </label>
+                            <!-- CLASE DE SLIDER ELIMINADA: range-slider-thumb-amber -->
                             <input type="range" id="deposito-plazo-input" min="7" max="30" value="7"
-                                class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer range-slider-thumb-amber">
+                                class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
                             <div class="flex justify-between text-xs text-slate-500 mt-1">
                                 <span>7 Días</span>
                                 <span>30 Días</span>
