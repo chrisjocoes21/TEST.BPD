@@ -10,7 +10,7 @@ const AppConfig = {
     CACHE_DURATION: 300000,
     
     APP_STATUS: 'RC', 
-    APP_VERSION: 'v27.0 - Flexible', 
+    APP_VERSION: 'v28.0 - Consolidado', 
     
     // --- REGLAS DE ECONOMÍA REBALANCEADA Y FLEXIBLE ---
     IMPUESTO_P2P_TASA: 0.05,        // Antes 0.10
@@ -62,8 +62,8 @@ const AppState = {
         p2pDestino: { query: '', selected: null, info: null },
         bonoAlumno: { query: '', selected: null, info: null },
         tiendaAlumno: { query: '', selected: null, info: null },
-        prestamoAlumno: { query: '', selected: null, info: null }, // Nuevo
-        depositoAlumno: { query: '', selected: null, info: null } // Nuevo
+        prestamoAlumno: { query: '', selected: null, info: null }, 
+        depositoAlumno: { query: '', selected: null, info: null } 
     },
     
     bonos: {
@@ -77,7 +77,11 @@ const AppState = {
         isStoreOpen: false,
         storeManualStatus: 'auto',
         selectedItem: null,
-    }
+    },
+    
+    // Estado para el carrusel Hero
+    heroSlideIndex: 0,
+    heroSlideCount: 2, // Inicialmente Slide 1 (Hero) y Slide 2 (Reglas)
 };
 
 // --- AUTENTICACIÓN ---
@@ -87,7 +91,7 @@ const AppAuth = {
         if (claveInput.value === AppConfig.CLAVE_MAESTRA) {
             
             AppUI.hideModal('gestion-modal');
-            AppUI.showTransaccionModal('transaccion');
+            AppUI.showTransaccionModal('transaccion'); // Abre el modal de administración
             
             claveInput.value = '';
             claveInput.classList.remove('shake', 'border-red-500');
@@ -264,9 +268,11 @@ const AppData = {
         // Actualización de Modales de Usuario
         const isBonoModalOpen = document.getElementById('bonos-modal').classList.contains('opacity-0') === false;
         const isTiendaModalOpen = document.getElementById('tienda-modal').classList.contains('opacity-0') === false;
+        const isTransaccionesCombinadasOpen = document.getElementById('transacciones-combinadas-modal').classList.contains('opacity-0') === false;
         
         if (isBonoModalOpen) AppUI.populateBonoList();
         if (isTiendaModalOpen) AppUI.renderTiendaItems();
+        
         if (isBonoModalOpen || isTiendaModalOpen) {
             // Si el paso 2 de Bonos/Tienda está visible, actualizar el estado de carga
             const activeModal = isBonoModalOpen ? 'bono' : 'tienda';
@@ -276,6 +282,14 @@ const AppData = {
                  AppTransacciones.setLoadingState(submitBtn, btnText, false, activeModal === 'bono' ? 'Confirmar Canje' : 'Confirmar Compra');
             }
         }
+        
+        if (isTransaccionesCombinadasOpen) {
+             // Si el modal combinado está abierto, forzar recálculos
+             AppUI.updatePrestamoCalculadora();
+             AppUI.updateDepositoCalculadora();
+             AppUI.updateP2PCalculoImpuesto();
+        }
+        
         // Actualización de Modales de Admin
         if (document.getElementById('transaccion-modal').classList.contains('opacity-0') === false) {
             const activeTab = document.querySelector('#transaccion-modal .tab-btn.active-tab');
@@ -290,6 +304,9 @@ const AppData = {
         }
 
         AppState.datosActuales = activeGroups;
+        
+        // Inyectar el contenido de las reglas en el carrusel (Slide 2)
+        AppUI.populateReglasContent();
     }
 };
 
@@ -301,30 +318,36 @@ const AppUI = {
         document.getElementById('gestion-btn').addEventListener('click', () => AppUI.showModal('gestion-modal'));
         document.getElementById('modal-submit').addEventListener('click', AppAuth.verificarClave);
         
-        // Listeners para Modales Flexibles (NUEVOS)
-        document.getElementById('prestamos-btn').addEventListener('click', () => AppUI.showPrestamoModal());
-        document.getElementById('depositos-btn').addEventListener('click', () => AppUI.showDepositoModal());
-        document.getElementById('prestamo-modal-close').addEventListener('click', () => AppUI.hideModal('prestamo-flexible-modal'));
-        document.getElementById('deposito-modal-close').addEventListener('click', () => AppUI.hideModal('deposito-flexible-modal'));
-        document.getElementById('prestamo-submit-btn').addEventListener('click', AppTransacciones.solicitarPrestamoFlexible);
-        document.getElementById('deposito-submit-btn').addEventListener('click', AppTransacciones.crearDepositoFlexible);
+        // LISTENERS NUEVOS: MODAL COMBINADO DE TRANSACCIONES
+        document.getElementById('transacciones-btn').addEventListener('click', () => AppUI.showTransaccionesCombinadasModal('p2p_transfer'));
+        document.getElementById('transacciones-combinadas-modal-close').addEventListener('click', () => AppUI.hideModal('transacciones-combinadas-modal'));
+
+        document.querySelectorAll('#transacciones-combinadas-modal .tab-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                AppUI.changeTransaccionesCombinadasTab(e.target.dataset.tab);
+            });
+        });
         
-        // Listeners para Calculadoras Flexibles
+        // Listeners para Hero Carousel
+        document.getElementById('hero-conoce-mas-btn').addEventListener('click', () => AppUI.goToHeroSlide(1));
+        document.getElementById('hero-conoce-mas-btn-mobile').addEventListener('click', () => AppUI.goToHeroSlide(1));
+        
+        // Listeners para Calculadoras Flexibles (Ahora en el modal combinado)
         AppUI.setupFlexibleInputListeners('prestamo');
         AppUI.setupFlexibleInputListeners('deposito');
+        document.getElementById('prestamo-submit-btn').addEventListener('click', AppTransacciones.solicitarPrestamoFlexible);
+        document.getElementById('deposito-submit-btn').addEventListener('click', AppTransacciones.crearDepositoFlexible);
 
         // Listeners P2P/Bonos/Tienda/Reglas
         document.getElementById('modal-cancel').addEventListener('click', () => AppUI.hideModal('gestion-modal'));
         document.getElementById('transaccion-modal-close-btn').addEventListener('click', () => AppUI.hideModal('transaccion-modal'));
-        document.getElementById('p2p-portal-btn').addEventListener('click', () => AppUI.showP2PModal());
-        document.getElementById('p2p-modal-close-btn').addEventListener('click', () => AppUI.hideModal('p2p-transfer-modal'));
         document.getElementById('bonos-btn').addEventListener('click', () => AppUI.showBonoModal());
         document.getElementById('bonos-modal-close').addEventListener('click', () => AppUI.hideModal('bonos-modal'));
         document.getElementById('tienda-btn').addEventListener('click', () => AppUI.showTiendaModal());
         document.getElementById('tienda-modal-close').addEventListener('click', () => AppUI.hideModal('tienda-modal'));
-        document.getElementById('reglas-btn').addEventListener('click', () => AppUI.showModal('reglas-modal'));
-        document.getElementById('reglas-modal-close').addEventListener('click', () => AppUI.hideModal('reglas-modal'));
-
+        // Reglas modal ELIMINADO
+        
+        // Listeners P2P (Ahora en el modal combinado)
         document.getElementById('p2p-submit-btn').addEventListener('click', AppTransacciones.realizarTransferenciaP2P);
         document.getElementById('p2p-cantidad').addEventListener('input', AppUI.updateP2PCalculoImpuesto);
 
@@ -332,12 +355,10 @@ const AppUI = {
         document.getElementById('gestion-modal').addEventListener('click', (e) => { if (e.target.id === 'gestion-modal') AppUI.hideModal('gestion-modal'); });
         document.getElementById('student-modal').addEventListener('click', (e) => { if (e.target.id === 'student-modal') AppUI.hideModal('student-modal'); });
         document.getElementById('transaccion-modal').addEventListener('click', (e) => { if (e.target.id === 'transaccion-modal') AppUI.hideModal('transaccion-modal'); });
-        document.getElementById('p2p-transfer-modal').addEventListener('click', (e) => { if (e.target.id === 'p2p-transfer-modal') AppUI.hideModal('p2p-transfer-modal'); });
         document.getElementById('bonos-modal').addEventListener('click', (e) => { if (e.target.id === 'bonos-modal') AppUI.hideModal('bonos-modal'); });
         document.getElementById('tienda-modal').addEventListener('click', (e) => { if (e.target.id === 'tienda-modal') AppUI.hideModal('tienda-modal'); });
-        document.getElementById('reglas-modal').addEventListener('click', (e) => { if (e.target.id === 'reglas-modal') AppUI.hideModal('reglas-modal'); });
-        document.getElementById('prestamo-flexible-modal').addEventListener('click', (e) => { if (e.target.id === 'prestamo-flexible-modal') AppUI.hideModal('prestamo-flexible-modal'); });
-        document.getElementById('deposito-flexible-modal').addEventListener('click', (e) => { if (e.target.id === 'deposito-flexible-modal') AppUI.hideModal('deposito-flexible-modal'); });
+        document.getElementById('transacciones-combinadas-modal').addEventListener('click', (e) => { if (e.target.id === 'transacciones-combinadas-modal') AppUI.hideModal('transacciones-combinadas-modal'); });
+        document.getElementById('terminos-modal').addEventListener('click', (e) => { if (e.target.id === 'terminos-modal') AppUI.hideModal('terminos-modal'); });
 
 
         // Listeners Bonos/Tienda/Transaccion Admin
@@ -370,8 +391,8 @@ const AppUI = {
         AppUI.setupSearchInput('p2p-search-destino', 'p2p-destino-results', 'p2pDestino', AppUI.selectP2PStudent);
         AppUI.setupSearchInput('bono-search-alumno-step2', 'bono-origen-results-step2', 'bonoAlumno', AppUI.selectBonoStudent);
         AppUI.setupSearchInput('tienda-search-alumno-step2', 'tienda-origen-results-step2', 'tiendaAlumno', AppUI.selectTiendaStudent);
-        AppUI.setupSearchInput('prestamo-search-alumno', 'prestamo-origen-results', 'prestamoAlumno', AppUI.selectFlexibleStudent); // Nuevo
-        AppUI.setupSearchInput('deposito-search-alumno', 'deposito-origen-results', 'depositoAlumno', AppUI.selectFlexibleStudent); // Nuevo
+        AppUI.setupSearchInput('prestamo-search-alumno', 'prestamo-origen-results', 'prestamoAlumno', AppUI.selectFlexibleStudent);
+        AppUI.setupSearchInput('deposito-search-alumno', 'deposito-origen-results', 'depositoAlumno', AppUI.selectFlexibleStudent);
 
         AppUI.mostrarVersionApp();
         
@@ -383,24 +404,41 @@ const AppUI = {
     
     // --- NUEVAS FUNCIONES DE MODALES FLEXIBLES (PRESTAMOS Y DEPÓSITOS) ---
     
-    showPrestamoModal: function() {
+    showTransaccionesCombinadasModal: function(initialTab = 'p2p_transfer') {
         if (!AppState.datosActuales) return;
-        AppUI.updatePrestamoCalculadora();
-        AppUI.resetSearchInput('prestamoAlumno');
-        document.getElementById('prestamo-clave-p2p').value = "";
-        document.getElementById('prestamo-status-msg').textContent = "";
-        AppUI.showModal('prestamo-flexible-modal');
-    },
-
-    showDepositoModal: function() {
-        if (!AppState.datosActuales) return;
-        AppUI.updateDepositoCalculadora();
-        AppUI.resetSearchInput('depositoAlumno');
-        document.getElementById('deposito-clave-p2p').value = "";
-        document.getElementById('deposito-status-msg').textContent = "";
-        AppUI.showModal('deposito-flexible-modal');
+        AppUI.changeTransaccionesCombinadasTab(initialTab);
+        AppUI.showModal('transacciones-combinadas-modal');
     },
     
+    changeTransaccionesCombinadasTab: function(tabId) {
+        document.querySelectorAll('#transacciones-combinadas-modal .tab-btn').forEach(btn => {
+            btn.classList.remove('active-tab', 'border-amber-600', 'text-amber-600');
+            btn.classList.add('border-transparent', 'text-slate-700', 'hover:bg-slate-100');
+        });
+
+        document.querySelectorAll('#transacciones-combinadas-modal .tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+
+        document.querySelector(`#transacciones-combinadas-modal [data-tab="${tabId}"]`).classList.add('active-tab', 'border-amber-600', 'text-amber-600');
+        document.querySelector(`#transacciones-combinadas-modal [data-tab="${tabId}"]`).classList.remove('border-transparent', 'text-slate-700', 'hover:bg-slate-100');
+        document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+        // Forzar recalculo y reset visual al cambiar de pestaña
+        if (tabId === 'p2p_transfer') {
+            AppUI.updateP2PCalculoImpuesto();
+            document.getElementById('p2p-clave').focus();
+        } else if (tabId === 'prestamo_flex') {
+            AppUI.resetFlexibleForm('prestamo');
+            AppUI.updatePrestamoCalculadora();
+        } else if (tabId === 'deposito_flex') {
+            AppUI.resetFlexibleForm('deposito');
+            AppUI.updateDepositoCalculadora();
+        }
+        
+        document.getElementById('transacciones-combinadas-status-msg').textContent = "";
+    },
+
     setupFlexibleInputListeners: function(type) {
         const montoInput = document.getElementById(`${type}-monto-input`);
         const plazoInput = document.getElementById(`${type}-plazo-input`);
@@ -509,10 +547,16 @@ const AppUI = {
     },
     
     selectFlexibleStudent: function(student) {
-        if (document.getElementById('prestamo-flexible-modal').classList.contains('opacity-0') === false) {
-             AppUI.updatePrestamoCalculadora();
-        } else if (document.getElementById('deposito-flexible-modal').classList.contains('opacity-0') === false) {
-             AppUI.updateDepositoCalculadora();
+        const modal = document.getElementById('transacciones-combinadas-modal');
+        if (modal.classList.contains('opacity-0') === false) {
+             const activeTab = document.querySelector('#transacciones-combinadas-modal .tab-btn.active-tab');
+             const tabId = activeTab ? activeTab.dataset.tab : '';
+             
+             if (tabId === 'prestamo_flex') {
+                  AppUI.updatePrestamoCalculadora();
+             } else if (tabId === 'deposito_flex') {
+                  AppUI.updateDepositoCalculadora();
+             }
         }
     },
     
@@ -558,7 +602,8 @@ const AppUI = {
             document.getElementById('tienda-admin-status-msg').textContent = "";
         }
         
-        if (modalId === 'p2p-transfer-modal') {
+        if (modalId === 'transacciones-combinadas-modal') {
+            // Resetear todos los formularios combinados
             AppUI.resetSearchInput('p2pOrigen');
             AppUI.resetSearchInput('p2pDestino');
             document.getElementById('p2p-clave').value = "";
@@ -566,6 +611,9 @@ const AppUI = {
             document.getElementById('p2p-calculo-impuesto').textContent = "";
             document.getElementById('p2p-status-msg').textContent = "";
             AppTransacciones.setLoadingState(document.getElementById('p2p-submit-btn'), document.getElementById('p2p-btn-text'), false, 'Realizar Transferencia');
+            
+            AppUI.resetFlexibleForm('prestamo');
+            AppUI.resetFlexibleForm('deposito');
         }
         
         if (modalId === 'bonos-modal') {
@@ -589,26 +637,31 @@ const AppUI = {
              document.getElementById('clave-input').classList.remove('shake', 'border-red-500');
         }
         
-        // Cierre de Modales Flexibles (NUEVO)
-        if (modalId === 'prestamo-flexible-modal') {
-             AppUI.resetFlexibleForm('prestamo');
-        }
-        if (modalId === 'deposito-flexible-modal') {
-             AppUI.resetFlexibleForm('deposito');
+        if (modalId === 'terminos-modal') {
+             // Limpiar contenido al cerrar
+             document.getElementById('terminos-modal-content').innerHTML = '<p class="text-center text-sm text-slate-500">Cargando el contrato de uso...</p>';
+             document.getElementById('terminos-modal-title').textContent = 'Términos y Condiciones';
         }
     },
     
     resetFlexibleForm: function(type) {
         AppUI.resetSearchInput(`${type}Alumno`);
         document.getElementById(`${type}-clave-p2p`).value = "";
-        document.getElementById(`${type}-monto-input`).value = type === 'prestamo' ? AppConfig.PRESTAMO_MIN_MONTO : AppConfig.DEPOSITO_MIN_MONTO;
-        document.getElementById(`${type}-plazo-input`).value = type === 'prestamo' ? AppConfig.PRESTAMO_MIN_PLAZO_DIAS : AppConfig.DEPOSITO_MIN_PLAZO_DIAS;
+        
+        const montoInput = document.getElementById(`${type}-monto-input`);
+        const plazoInput = document.getElementById(`${type}-plazo-input`);
+        
+        if (montoInput) montoInput.value = type === 'prestamo' ? AppConfig.PRESTAMO_MIN_MONTO : AppConfig.DEPOSITO_MIN_MONTO;
+        if (plazoInput) plazoInput.value = type === 'prestamo' ? AppConfig.PRESTAMO_MIN_PLAZO_DIAS : AppConfig.DEPOSITO_MIN_PLAZO_DIAS;
+
         document.getElementById(`${type}-status-msg`).textContent = "";
         
-        // Forzar el recálculo
-        if (type === 'prestamo') AppUI.updatePrestamoCalculadora();
-        if (type === 'deposito') AppUI.updateDepositoCalculadora();
-        
+        // Forzar el recálculo y actualización de slider fill
+        const updateFunc = type === 'prestamo' ? AppUI.updatePrestamoCalculadora : AppUI.updateDepositoCalculadora;
+        updateFunc(); 
+        AppUI.updateSliderFill(montoInput);
+        AppUI.updateSliderFill(plazoInput);
+
         // Resetear estado del botón (deshabilitado por defecto)
         document.getElementById(`${type}-submit-btn`).disabled = true;
     },
@@ -848,18 +901,7 @@ const AppUI = {
         });
     },
 
-    // --- FUNCIONES P2P ---
-    
-    showP2PModal: function() {
-        if (!AppState.datosActuales) return;
-        AppUI.resetSearchInput('p2pOrigen');
-        AppUI.resetSearchInput('p2pDestino');
-        document.getElementById('p2p-clave').value = "";
-        document.getElementById('p2p-cantidad').value = "";
-        document.getElementById('p2p-calculo-impuesto').textContent = "";
-        document.getElementById('p2p-status-msg').textContent = "";
-        AppUI.showModal('p2p-transfer-modal');
-    },
+    // --- FUNCIONES P2P (Ahora en Modal Combinado) ---
     
     updateP2PCalculoImpuesto: function() {
         const cantidadInput = document.getElementById('p2p-cantidad');
@@ -1622,6 +1664,60 @@ const AppUI = {
             }
         });
     },
+    
+    // --- Lógica del Carrusel Hero ---
+    
+    goToHeroSlide: function(index) {
+        if (index < 0 || index >= AppState.heroSlideCount) return;
+        
+        AppState.heroSlideIndex = index;
+        const track = document.getElementById('hero-carousel');
+        const offset = -index * 100;
+        
+        if (track) {
+            track.style.transform = `translateX(${offset}%)`;
+        }
+    },
+    
+    populateReglasContent: function() {
+        const container = document.getElementById('reglas-content');
+        
+        // Contenido detallado de productos y reglas (sustituye el modal de reglas)
+        container.innerHTML = `
+            <h3 class="text-xl font-bold text-slate-800 border-b border-amber-300 pb-2 mb-4">1. Transferencias P2P (Peer-to-Peer)</h3>
+            <p><strong>Propósito:</strong> Intercambio directo de Pinceles (ℙ) entre alumnos por bienes o servicios lícitos dentro del ecosistema académico. Fomenta el comercio y la economía interna.</p>
+            <ul class="list-disc list-inside space-y-1 ml-4 text-sm">
+                <li>**Costo Operacional:** Toda transferencia está sujeta a un impuesto/comisión del <strong>${AppConfig.IMPUESTO_P2P_TASA * 100}%</strong>, debitado del remitente, que se destina a la Tesorería para la estabilidad del sistema.</li>
+                <li>**Seguridad:** Requiere la **Clave P2P** personal e intransferible para su autorización.</li>
+                <li>**Irrevocabilidad:** Una vez confirmada, la transacción es definitiva. El Banco no realiza reembolsos salvo error técnico comprobado.</li>
+                <li>**Regulación:** Estrictamente prohibido el uso para actos ilícitos o lavado de activos, conforme a los Términos y Condiciones.</li>
+            </ul>
+
+            <h3 class="text-xl font-bold text-slate-800 border-b border-amber-300 pb-2 mb-4 mt-6">2. Préstamos Flexibles (Financiamiento)</h3>
+            <p><strong>Propósito:</strong> Proporcionar capital líquido a corto plazo a estudiantes elegibles para cubrir necesidades académicas o de compra.</p>
+            <ul class="list-disc list-inside space-y-1 ml-4 text-sm">
+                <li>**Monto:** Desde ${AppFormat.formatNumber(AppConfig.PRESTAMO_MIN_MONTO)} ℙ hasta ${AppFormat.formatNumber(AppConfig.PRESTAMO_MAX_MONTO)} ℙ.</li>
+                <li>**Plazo:** De **${AppConfig.PRESTAMO_MIN_PLAZO_DIAS} a ${AppConfig.PRESTAMO_MAX_PLAZO_DIAS} días**.</li>
+                <li>**Tasa de Interés:** Inicia en ${AppConfig.PRESTAMO_TASA_BASE * 100}% y aumenta en ${AppConfig.PRESTAMO_BONUS_POR_DIA * 100}% por cada día adicional de plazo (Tasa Máxima del 100%).</li>
+                <li>**Elegibilidad:** Requiere un saldo positivo y el monto solicitado no debe exceder el 50% del saldo actual del alumno (para garantizar capacidad de pago). No se permiten préstamos si ya hay uno activo.</li>
+            </ul>
+
+            <h3 class="text-xl font-bold text-slate-800 border-b border-amber-300 pb-2 mb-4 mt-6">3. Depósitos Flexibles (Inversión)</h3>
+            <p><strong>Propósito:</strong> Permitir a los alumnos invertir su capital para generar un rendimiento a una tasa superior al ahorro simple.</p>
+            <ul class="list-disc list-inside space-y-1 ml-4 text-sm">
+                <li>**Monto Mínimo:** ${AppFormat.formatNumber(AppConfig.DEPOSITO_MIN_MONTO)} ℙ.</li>
+                <li>**Plazo:** De **${AppConfig.DEPOSITO_MIN_PLAZO_DIAS} a ${AppConfig.DEPOSITO_MAX_PLAZO_DIAS} días**.</li>
+                <li>**Tasa de Interés:** Inicia en ${AppConfig.DEPOSITO_TASA_BASE * 100}% y aumenta en ${AppConfig.DEPOSITO_BONUS_POR_DIA * 100}% por cada día adicional de plazo.</li>
+                <li>**Retención de Impuesto (Interés):** El interés generado está **EXENTO de impuesto**. (0% - ${AppConfig.IMPUESTO_DEPOSITO_TASA * 100}%).</li>
+                <li>**Condición:** Los fondos depositados quedan congelados hasta la fecha de vencimiento. No se puede crear un depósito si se tiene un préstamo activo.</li>
+            </ul>
+        `;
+        
+        // Volver al primer slide después de inyectar contenido
+        AppUI.goToHeroSlide(0); 
+    },
+    
+    // --- Fin Lógica del Carrusel Hero ---
 
     mostrarPantallaNeutral: function(grupos) {
         document.getElementById('main-header-title').textContent = "Bienvenido al Banco del Pincel Dorado";
@@ -1698,13 +1794,6 @@ const AppUI = {
         });
 
         const topN = studentsWithCapital.sort((a, b) => b.capitalTotal - a.capitalTotal).slice(0, 3);
-
-        const createStat = (label, value, valueClass = 'text-slate-900') => `
-            <div class="bg-slate-50 p-4 rounded-lg text-center border border-slate-200">
-                <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">${label}</div>
-                <div class="text-2xl font-bold ${valueClass} truncate">${value}</div>
-            </div>
-        `;
 
         if (topN.length > 0) {
             top3Html = topN.map((student, index) => {
@@ -1898,6 +1987,7 @@ const AppUI = {
         AppUI.showModal('student-modal');
     },
     
+    // Función para actualizar el contador (sin segundos)
     updateCountdown: function() {
         const getLastThursday = (year, month) => {
             const lastDayOfMonth = new Date(year, month + 1, 0);
@@ -1955,17 +2045,15 @@ const AppUI = {
                 const days = f(Math.floor(distance / (1000 * 60 * 60 * 24)));
                 const hours = f(Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
                 const minutes = f(Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)));
-                const seconds = f(Math.floor((distance % (1000 * 60)) / 1000));
+                // Segundos eliminados
                 
                 const daysEl = document.getElementById('days');
                 const hoursEl = document.getElementById('hours');
                 const minutesEl = document.getElementById('minutes');
-                const secondsEl = document.getElementById('seconds');
                 
                 if(daysEl) daysEl.textContent = days;
                 if(hoursEl) hoursEl.textContent = hours;
                 if(minutesEl) minutesEl.textContent = minutes;
-                if(secondsEl) secondsEl.textContent = seconds;
 
 
                 AppState.tienda.isStoreOpen = false;
@@ -1976,6 +2064,39 @@ const AppUI = {
             AppUI.updateTiendaButtonStates();
             AppUI.updateTiendaAdminStatusLabel();
         }
+    },
+    
+    // Utilidad para forzar el relleno del input range
+    updateSliderFill: (input) => {
+        if (!input || input.type !== 'range') return;
+        const min = input.min ? input.min : 0;
+        const max = input.max ? input.max : 100;
+        const val = input.value;
+        const percent = ((val - min) / (max - min)) * 100;
+        input.style.background = `linear-gradient(to right, #d97706 0%, #d97706 ${percent}%, #cbd5e1 ${percent}%, #cbd5e1 100%)`;
+    },
+    
+    // Función para mostrar modales legales y cargar contenido
+    showLegalModal: function(type) {
+        const titleEl = document.getElementById('terminos-modal-title');
+        const contentEl = document.getElementById('terminos-modal-content');
+        
+        let title, contentHTML;
+
+        if (type === 'terminos') {
+            title = "Términos y Condiciones de Uso del Banco";
+            contentHTML = AppContent.terminosYCondiciones;
+        } else if (type === 'privacidad') {
+            title = "Acuerdo de Privacidad y Uso de Datos";
+            contentHTML = AppContent.acuerdoDePrivacidad;
+        } else {
+            return;
+        }
+
+        titleEl.textContent = title;
+        contentEl.innerHTML = contentHTML;
+        
+        AppUI.showModal('terminos-modal');
     }
 };
 
@@ -2831,6 +2952,83 @@ const AppTransacciones = {
     }
 };
 
+// --- CONTENIDO ESTATICOS (Términos, Privacidad) ---
+
+const AppContent = {
+    // Contenido extendido y estructurado basado en el documento P2P + nuevos productos
+    terminosYCondiciones: `
+        <h2 class="text-xl font-bold color-dorado-main mb-4">CONTRATO DE TÉRMINOS Y CONDICIONES DE USO DEL BANCO DEL PINCEL DORADO (BPD)</h2>
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">I. DEFINICIONES Y ALCANCE</h3>
+        <p>El uso de cualquiera de los servicios de banca virtual del BPD (P2P, Préstamos, Depósitos, Tienda) implica la total e incondicional aceptación de este Contrato y del Reglamento General del BPD.</p>
+        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+            <li><strong>Usuario:</strong> Cualquier alumno activo.</li>
+            <li><strong>Pinceles (ℙ):</strong> Unidad monetaria virtual sin valor fuera del ecosistema académico.</li>
+            <li><strong>Clave P2P:</strong> Contraseña personal e intransferible para autorizar transacciones.</li>
+            <li><strong>Tesorería:</strong> Fondo central del BPD para garantizar la sostenibilidad.</li>
+        </ul>
+
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">II. SERVICIO DE TRANSFERENCIAS P2P</h3>
+        <p>Permite la transferencia de Pinceles entre Usuarios.</p>
+        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+            <li><strong>Irrevocabilidad:</strong> Toda Transacción P2P confirmada es definitiva. El BPD no ofrece reembolsos salvo error técnico imputable al sistema.</li>
+            <li><strong>Impuesto a la Transacción:</strong> Aplica un impuesto/comisión del <strong>${AppConfig.IMPUESTO_P2P_TASA * 100}%</strong> sobre el monto enviado, debitado del Remitente, destinado a la Tesorería.</li>
+            <li><strong>Responsabilidad de la Clave:</strong> El Usuario es el único responsable de la custodia de su Clave P2P.</li>
+        </ul>
+
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">III. PRÉSTAMOS FLEXIBLES</h3>
+        <p>El BPD otorga financiamiento bajo las siguientes condiciones:</p>
+        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+            <li><strong>Términos:</strong> El interés total se calcula con una Tasa Base (${AppConfig.PRESTAMO_TASA_BASE * 100}%) más un bono diario (${AppConfig.PRESTAMO_BONUS_POR_DIA * 100}%) por el plazo seleccionado (entre ${AppConfig.PRESTAMO_MIN_PLAZO_DIAS} y ${AppConfig.PRESTAMO_MAX_PLAZO_DIAS} días).</li>
+            <li><strong>Obligación:</strong> El Usuario se compromete a pagar el monto total (capital + interés) en las cuotas diarias resultantes. El incumplimiento resultará en la congelación de la cuenta y la acumulación de cargos adicionales.</li>
+            <li><strong>Elegibilidad:</strong> El BPD se reserva el derecho de rechazar solicitudes basadas en el historial crediticio o el saldo actual del solicitante.</li>
+        </ul>
+
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">IV. DEPÓSITOS FLEXIBLES (INVERSIONES)</h3>
+        <p>El BPD capta fondos del Usuario para generar rendimientos.</p>
+        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+            <li><strong>Términos:</strong> El rendimiento se calcula con una Tasa Base (${AppConfig.DEPOSITO_TASA_BASE * 100}%) más un bono diario (${AppConfig.DEPOSITO_BONUS_POR_DIA * 100}%) por el plazo seleccionado.</li>
+            <li><strong>Restricción:</strong> El monto invertido y los intereses acumulados serán retenidos hasta el vencimiento del plazo. La cancelación anticipada puede conllevar una penalización.</li>
+            <li><strong>Tributación:</strong> Los intereses generados están exentos de impuestos (0% de retención).</li>
+        </ul>
+
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">V. SANCIONES Y ACTOS ILÍCITOS</h3>
+        <p>Queda estrictamente prohibido utilizar cualquier servicio del BPD (incluyendo P2P) para fraude, lavado de activos (mover dinero sin justificación lícita), o cualquier actividad que contravenga las Normas de Convivencia.</p>
+        <p>El incumplimiento podrá ser sancionado con la congelación de la cuenta, la reversión de transacciones, o la exclusión permanente del sistema. El BPD se reserva el derecho de auditar cualquier transacción que considere atípica.</p>
+    `,
+    
+    // Contenido nuevo para la política de privacidad
+    acuerdoDePrivacidad: `
+        <h2 class="text-xl font-bold color-dorado-main mb-4">ACUERDO DE PRIVACIDAD Y USO DE DATOS DEL BPD</h2>
+        <p>El Banco del Pincel Dorado (BPD) se compromete con la transparencia en el manejo de los datos de sus Usuarios, los cuales son utilizados exclusivamente para la funcionalidad, seguridad y estabilidad del ecosistema económico académico.</p>
+
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">I. DATOS RECOPILADOS</h3>
+        <p>El BPD recopila y procesa los siguientes tipos de datos:</p>
+        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+            <li><strong>Datos de Identificación:</strong> Nombre de Usuario y Grupo Académico.</li>
+            <li><strong>Datos Financieros Internos:</strong> Saldo de Pinceles (ℙ), historial de Transacciones (P2P, Depósitos, Préstamos), Clave P2P (almacenada en formato encriptado, nunca visible).</li>
+            <li><strong>Metadatos:</strong> Fecha, hora y tipo de transacción.</li>
+        </ul>
+        <p class="mt-2 font-semibold">El BPD NO recopila información personal sensible (como direcciones de correo, números de teléfono o datos bancarios del mundo real).</p>
+
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">II. FINALIDAD DEL USO DE DATOS</h3>
+        <p>La información recopilada tiene como único fin:</p>
+        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+            <li>Garantizar la correcta ejecución de las transacciones (ej. transferencias P2P).</li>
+            <li>Calcular saldos, intereses y cuotas de préstamos.</li>
+            <li>Monitorear la estabilidad económica y detectar patrones de fraude o actividad ilícita.</li>
+            <li>Proveer reportes de desempeño financiero a los administradores del BPD.</li>
+        </ul>
+
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">III. ALMACENAMIENTO Y SEGURIDAD</h3>
+        <p>Los datos son almacenados en una base de datos segura y de acceso restringido (Google Sheets/Script), accesible únicamente por los administradores del BPD mediante clave maestra.</p>
+        <p>La Clave P2P, aunque necesaria para autorizar transacciones, nunca se transmite en texto plano y no es visible para el Administrador; sin embargo, el Usuario acepta que su uso es la única prueba de la autenticidad de la transacción.</p>
+
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">IV. CUMPLIMIENTO Y CONSENTIMIENTO</h3>
+        <p>El Usuario, al utilizar el BPD, otorga su consentimiento expreso para la recopilación y el procesamiento de sus datos de transacción, reconociendo que esta actividad es vital para la operación del sistema.</p>
+        <p>El BPD no compartirá ni venderá datos de Usuarios a terceros fuera del entorno académico.</p>
+    `
+};
+
 function escapeHTML(str) {
     if (typeof str !== 'string') return str;
     return str.replace(/'/g, "\\'").replace(/"/g, "&quot;");
@@ -2839,6 +3037,7 @@ function escapeHTML(str) {
 window.AppUI = AppUI;
 window.AppFormat = AppFormat;
 window.AppTransacciones = AppTransacciones;
+window.AppContent = AppContent;
 
 window.AppUI.handleEditBono = AppUI.handleEditBono;
 window.AppTransacciones.eliminarBono = AppTransacciones.eliminarBono;
@@ -2849,23 +3048,45 @@ window.AppTransacciones.eliminarItem = AppTransacciones.eliminarItem;
 window.AppTransacciones.toggleStoreManual = AppTransacciones.toggleStoreManual;
 window.AppTransacciones.iniciarCompra = AppTransacciones.iniciarCompra;
 window.AppTransacciones.iniciarCanje = AppTransacciones.iniciarCanje;
+window.AppUI.showLegalModal = AppUI.showLegalModal; // Exponer la nueva función
 
 window.onload = function() {
     AppUI.init();
     
     // Inyección de estilos de slider (para cross-browser progress fill)
-    const updateSliderFill = (input) => {
-        if (input.type !== 'range') return;
-        const min = input.min ? input.min : 0;
-        const max = input.max ? input.max : 100;
-        const val = input.value;
-        const percent = ((val - min) / (max - min)) * 100;
-        input.style.background = `linear-gradient(to right, #d97706 0%, #d97706 ${percent}%, #cbd5e1 ${percent}%, #cbd5e1 100%)`;
+    const setupSliderFill = () => {
+        const inputs = document.querySelectorAll('input[type="range"]');
+        inputs.forEach(input => {
+            const update = () => AppUI.updateSliderFill(input);
+            update();
+            input.addEventListener('input', update);
+        });
     };
+    
+    // Inicializar carrusel hero
+    AppUI.goToHeroSlide(0); 
 
-    document.querySelectorAll('input[type="range"]').forEach(input => {
-        updateSliderFill(input);
-        input.addEventListener('input', () => updateSliderFill(input));
-    });
+    // Inicializar listeners del carrusel después de un breve retraso para asegurar que JS y HTML estén listos
+    setTimeout(() => {
+        setupSliderFill();
+        document.getElementById('transacciones-combinadas-modal').addEventListener('click', (e) => {
+             // Listener para tabs dentro del modal combinado
+             if (e.target.classList.contains('tab-btn') && e.target.closest('#transacciones-combinadas-modal')) {
+                 AppUI.changeTransaccionesCombinadasTab(e.target.dataset.tab);
+             }
+             // Listener para cerrar en backdrop
+             if (e.target.id === 'transacciones-combinadas-modal') {
+                 AppUI.hideModal('transacciones-combinadas-modal');
+             }
+        });
+
+        // Asegurar que el relleno de los sliders se aplica al abrir el modal
+        document.getElementById('transacciones-combinadas-modal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('tab-btn')) {
+                 setTimeout(setupSliderFill, 10);
+            }
+        });
+        
+    }, 500); 
 
 };
