@@ -1252,6 +1252,31 @@ function initializeAppMethods() {
         },
 
         // --- HERO CAROUSEL LÓGICA ---
+        
+        // *NUEVA FUNCIÓN* Muestra el slide por índice y reinicia el carrusel si está activo.
+        showHeroSlide: function(index) {
+            const slides = document.querySelectorAll('.hero-slide');
+            const totalSlides = slides.length;
+            if (totalSlides === 0) return;
+            
+            // 1. Validar índice y actualizar el estado
+            AppState.heroCarousel.currentIndex = index % totalSlides;
+            
+            // 2. Aplicar clases
+            slides.forEach((slide, idx) => {
+                if (idx === AppState.heroCarousel.currentIndex) {
+                    slide.classList.add('active-slide');
+                } else {
+                    slide.classList.remove('active-slide');
+                }
+            });
+
+            // 3. Si el carrusel estaba activo, reiniciamos el timer
+            if (AppState.heroCarousel.timer) {
+                AppUI.startHeroCarousel(); 
+            }
+        },
+
         renderHeroCarousel: function() {
             const container = document.getElementById('hero-carousel');
             if (!container) return;
@@ -1270,6 +1295,7 @@ function initializeAppMethods() {
         },
         
         startHeroCarousel: function() {
+            // Detener el temporizador anterior si existe
             if (AppState.heroCarousel.timer) { clearInterval(AppState.heroCarousel.timer); }
 
             const slides = document.querySelectorAll('.hero-slide');
@@ -1278,16 +1304,12 @@ function initializeAppMethods() {
             if (totalSlides <= 1) return; // No iniciar si solo hay 1 slide
             
             const nextSlide = () => {
-                AppState.heroCarousel.currentIndex = (AppState.heroCarousel.currentIndex + 1) % totalSlides;
-                slides.forEach((slide, index) => {
-                    if (index === AppState.heroCarousel.currentIndex) {
-                        slide.classList.add('active-slide');
-                    } else {
-                        slide.classList.remove('active-slide');
-                    }
-                });
+                // Usamos la nueva función showHeroSlide
+                const nextIndex = (AppState.heroCarousel.currentIndex + 1) % totalSlides;
+                AppUI.showHeroSlide(nextIndex);
             };
 
+            // Iniciar nuevo temporizador
             AppState.heroCarousel.timer = setInterval(nextSlide, 5000); // 5 segundos
         },
 
@@ -1586,7 +1608,7 @@ function initializeAppMethods() {
                     AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono guardado con éxito!");
                     AppUI.clearBonoAdminForm();
                     await AppData.cargarDatos(false);
-                    AppUI.populateBonoList(); 
+                    AppUI.populateBonoAdminList(); 
                 } else { throw new Error(result.message || "Error al guardar el bono."); }
             } catch (error) { AppTransacciones.setError(statusMsg, error.message); } 
             finally { AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar Bono'); }
@@ -1603,7 +1625,7 @@ function initializeAppMethods() {
                 if (result.success === true) {
                     AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
                     await AppData.cargarDatos(false);
-                    AppUI.populateBonoList();
+                    AppUI.populateBonoAdminList();
                 } else { throw new Error(result.message || "Error al eliminar el bono."); }
             } catch (error) { AppTransacciones.setError(statusMsg, error.message); document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false); } 
         },
@@ -1613,10 +1635,10 @@ function initializeAppMethods() {
             const statusMsg = document.getElementById('tienda-status-msg');
             const buyBtn = document.getElementById(`buy-btn-${itemId}`);
             if (buyBtn) {
-                clickedBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
-                clickedBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
-                clickedBtn.disabled = true;
-                clickedBtn.querySelector('.btn-text').textContent = "Cargando...";
+                buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+                buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+                buyBtn.disabled = true;
+                buyBtn.querySelector('.btn-text').textContent = "Cargando...";
             }
             statusMsg.textContent = "";
             if (!item) { AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado."); if (buyBtn) AppUI.updateTiendaButtonStates(); return; }
@@ -1703,7 +1725,7 @@ function initializeAppMethods() {
                     AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
                     AppUI.clearTiendaAdminForm();
                     await AppData.cargarDatos(false);
-                    AppUI.renderTiendaItems();
+                    AppUI.populateTiendaAdminList();
                 } else { throw new Error(result.message || "Error al guardar el artículo."); }
             } catch (error) { AppTransacciones.setError(statusMsg, error.message); } 
             finally { AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar'); }
@@ -1721,7 +1743,7 @@ function initializeAppMethods() {
                 if (result.success === true) {
                     AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo eliminado con éxito!");
                     await AppData.cargarDatos(false);
-                    AppUI.renderTiendaItems();
+                    AppUI.populateTiendaAdminList();
                 } else { throw new Error(result.message || "Error al eliminar el artículo."); }
             } catch (error) { AppTransacciones.setError(statusMsg, error.message); AppData.cargarDatos(false); } 
             finally { AppUI.clearTiendaAdminForm(); }
