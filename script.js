@@ -1,8 +1,8 @@
 /**
  * ===================================================================
- * CÓDIGO DE FRONTEND (script.js) - Banca Flexible v2.3 (FINAL)
- * CORRECCIÓN: Reestructuración de AppUI para eliminar TypeErrors al llamar funciones auxiliares
- * desde AppData.cargarDatos.
+ * CÓDIGO DE FRONTEND (script.js) - Banca Flexible v2.4 (FINAL)
+ * CORRECCIÓN CRÍTICA: Reestructuración de AppUI para solucionar TypeErrors 
+ * (setupSearchInput, mostrarVersionApp, etc.) garantizando la accesibilidad.
  * ===================================================================
  */
 
@@ -183,7 +183,6 @@ const AppData = {
                 AppUI.setConnectionStatus('error', 'Sin conexión, mostrando caché.');
                 if (AppData.isCacheValid()) { await AppData.procesarYMostrarDatos(AppState.cachedData); } else { throw new Error("Sin conexión y sin datos en caché."); }
             } else {
-                AppState.isOffline = false;
                 const url = `${AppConfig.API_URL}?cacheBuster=${new Date().getTime()}`;
                 const response = await fetch(url, { method: 'GET', cache: 'no-cache', redirect: 'follow' });
                 if (!response.ok) { throw new Error(`Error de red: ${response.status} ${response.statusText}`); }
@@ -355,6 +354,33 @@ const AppUI = {
         });
     },
 
+    // AUTCOMPLETE CORE (Llamado por init y self-contained logic)
+    setupSearchInput: function(inputId, resultsId, stateKey, onSelectCallback) {
+        const input = document.getElementById(inputId);
+        const results = document.getElementById(resultsId);
+
+        if (!input) return;
+
+        input.addEventListener('input', (e) => {
+            const query = e.target.value;
+            AppState.currentSearch[stateKey].query = query;
+            AppState.currentSearch[stateKey].selected = null; 
+            AppState.currentSearch[stateKey].info = null;
+            
+            if (query === '') { onSelectCallback(null); }
+            if (results) { AppUI.handleStudentSearch(query, inputId, resultsId, stateKey, onSelectCallback); }
+        });
+        
+        if (results) {
+            document.addEventListener('click', (e) => {
+                if (!input.contains(e.target) && !results.contains(e.target)) {
+                    results.classList.add('hidden');
+                }
+            });
+            input.addEventListener('focus', () => { if (input.value) { AppUI.handleStudentSearch(input.value, inputId, resultsId, stateKey, onSelectCallback); } });
+        }
+    },
+    
     // **********************************************
     // 2. FUNCIÓN PRINCIPAL INIT
     // **********************************************
