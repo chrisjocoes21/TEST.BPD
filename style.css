@@ -162,14 +162,16 @@ body {
 /* =================================================================== */
 /* Hero Section Dinámica (Carrusel SLIDE) */
 /* =================================================================== */
+/* CAMBIO: min-height reducido de 300px a 250px para hacerlo más compacto */
 .hero-section-bpd {
-    min-height: 300px;
+    min-height: 250px;
 }
 
 /* Estilo base de los slides */
 .hero-slide {
     pointer-events: auto; 
-    padding: 2rem 3rem;
+    /* CAMBIO: Padding base reducido. Tailwind (p-6 md:p-8) en index.html tendrá precedencia. */
+    padding: 1.5rem 2rem;
     display: flex;
     align-items: center;
     justify-content: space-between; 
