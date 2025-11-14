@@ -3,6 +3,7 @@
  * CÓDIGO DE FRONTEND (script.js) - Banca Flexible v2.8 (FINAL)
  * CORRECCIÓN CRÍTICA: Reestructuración de inicialización (initializeAppMethods)
  * para resolver dependencias circulares y TypeErrors de carga.
+ * IMPLEMENTACIONES: Contador Último Jueves, Sidebar Funcional, Hero Slide Animado.
  * ===================================================================
  */
 
@@ -80,7 +81,10 @@ AppState = {
     heroCarousel: {
         currentIndex: 0,
         timer: null
-    }
+    },
+    
+    // NUEVO: Estado del Contador
+    countdownTarget: null
 };
 
 // --- 3. POBLAR CONSTANTES ESTRUCTURALES (Dependen de AppConfig) ---
@@ -318,6 +322,36 @@ function initializeAppMethods() {
             const versionContainer = document.getElementById('app-version-container');
             versionContainer.classList.add('text-slate-400'); 
             versionContainer.innerHTML = `Estado: ${AppConfig.APP_STATUS} | ${AppConfig.APP_VERSION}`;
+        },
+        
+        // --- LÓGICA DE BARRA LATERAL (SLIDER BAR) ---
+        toggleSidebar: function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const isOpen = sidebar.classList.contains('-translate-x-full') === false;
+            
+            if (isOpen) {
+                AppUI.hideSidebar();
+            } else {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden', 'opacity-0');
+                overlay.classList.add('opacity-100');
+                AppState.isSidebarOpen = true;
+            }
+        },
+        
+        hideSidebar: function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('opacity-0');
+            
+            // Ocultar overlay después de la transición
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                AppState.isSidebarOpen = false;
+            }, 300); 
         },
         
         // --- LÓGICA DE BÚSQUEDA (AUTOCOMPLETE) ---
@@ -580,7 +614,10 @@ function initializeAppMethods() {
             
             document.getElementById('home-stats-container').classList.remove('hidden');
             document.getElementById('home-modules-grid').classList.remove('hidden');
-            AppUI.showHeroSlide(0);
+            
+            // Renderizar Hero y Contador
+            AppUI.renderHeroCarousel();
+            // AppUI.updateCountdown(); // El setInterval en init se encarga de esto
         },
 
         mostrarDatosGrupo: function(grupo) {
@@ -890,6 +927,204 @@ function initializeAppMethods() {
         },
 
         // **********************************************
+        // 2. FUNCIONES NUEVAS Y MODIFICADAS
+        // **********************************************
+
+        // --- CONTADOR DE ÚLTIMO JUEVES ---
+        
+        /**
+         * Función auxiliar para encontrar la fecha del último Jueves de un mes dado.
+         * @param {number} year - Año
+         * @param {number} month - Mes (0-11)
+         * @returns {Date} La fecha del último jueves.
+         */
+        getLastThursdayOfMonth: function(year, month) {
+            let date = new Date(year, month + 1, 0); // Empieza en el último día del mes
+            while (date.getDay() !== 4) { // 4 es Jueves (0=Domingo, 1=Lunes, ...)
+                date.setDate(date.getDate() - 1);
+            }
+            // Fija la hora a las 18:00 (6 PM) para la apertura de la tienda
+            date.setHours(18, 0, 0, 0);
+            return date;
+        },
+
+        calculateNextTargetDate: function() {
+            const now = new Date();
+            let currentYear = now.getFullYear();
+            let currentMonth = now.getMonth();
+            
+            let targetDate = AppUI.getLastThursdayOfMonth(currentYear, currentMonth);
+
+            // Si el último jueves de este mes ya pasó (o es hoy después de las 18:00), calcula el del próximo mes
+            if (targetDate.getTime() < now.getTime()) {
+                currentMonth++;
+                if (currentMonth > 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                }
+                targetDate = AppUI.getLastThursdayOfMonth(currentYear, currentMonth);
+            }
+            
+            return targetDate;
+        },
+        
+        updateCountdown: function() {
+            if (!AppState.countdownTarget || AppState.countdownTarget.getTime() < Date.now()) {
+                AppState.countdownTarget = AppUI.calculateNextTargetDate();
+                AppUI.updateStoreState(); // Forzar actualización de estado al cambiar de target
+            }
+            
+            const now = new Date().getTime();
+            const distance = AppState.countdownTarget.getTime() - now;
+
+            const daysEl = document.getElementById('days');
+            const hoursEl = document.getElementById('hours');
+            const minutesEl = document.getElementById('minutes');
+            const secondsEl = document.getElementById('seconds');
+            const messageEl = document.getElementById('store-message');
+            
+            if (!daysEl) return;
+
+            if (distance < 0) {
+                // El contador ya pasó el último jueves (o la hora de apertura)
+                daysEl.textContent = '00';
+                hoursEl.textContent = '00';
+                minutesEl.textContent = '00';
+                secondsEl.textContent = '00';
+                messageEl.textContent = "¡TIENDA ABIERTA! (Hasta el próximo cambio de mes)";
+                messageEl.classList.remove('hidden');
+                
+                // Forzar el recálculo del target en el siguiente ciclo (o cuando se recargue la app)
+                AppState.countdownTarget = null; 
+                AppState.tienda.isStoreOpen = true; 
+                AppUI.updateTiendaButtonStates();
+
+                // Si la tienda está en modo "auto" y ya pasó el tiempo, la tienda debe estar abierta
+                if (AppState.tienda.storeManualStatus === 'auto') {
+                    AppState.tienda.isStoreOpen = true;
+                }
+                
+                return;
+            }
+
+            // Cálculo normal
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            daysEl.textContent = String(days).padStart(2, '0');
+            hoursEl.textContent = String(hours).padStart(2, '0');
+            minutesEl.textContent = String(minutes).padStart(2, '0');
+            secondsEl.textContent = String(seconds).padStart(2, '0');
+            
+            messageEl.textContent = "La Tienda y Bonos abren el Último Jueves del Mes a las 6PM.";
+            messageEl.classList.remove('hidden');
+
+            AppState.tienda.isStoreOpen = false;
+            AppUI.updateStoreState();
+        },
+        
+        updateStoreState: function() {
+            const messageEl = document.getElementById('store-message');
+            // La tienda solo está abierta si el contador ya ha llegado a cero (isStoreOpen = true)
+            // O si ha sido forzada a abrir manualmente
+            const isStoreManuallyOpen = AppState.tienda.storeManualStatus === 'open';
+            const isStoreManuallyClosed = AppState.tienda.storeManualStatus === 'closed';
+
+            if (isStoreManuallyOpen) {
+                AppState.tienda.isStoreOpen = true;
+                messageEl.textContent = "¡TIENDA FORZADA ABIERTA POR ADMINISTRACIÓN!";
+                messageEl.classList.remove('color-dorado-main');
+                messageEl.classList.add('text-green-600');
+            } else if (isStoreManuallyClosed) {
+                 AppState.tienda.isStoreOpen = false;
+                 messageEl.textContent = "TIENDA CERRADA POR ADMINISTRACIÓN.";
+                 messageEl.classList.remove('color-dorado-main');
+                 messageEl.classList.add('text-red-600');
+            } else if (AppState.tienda.isStoreOpen) {
+                // Estado automático: Si el contador llegó a cero, está abierta
+                AppState.tienda.isStoreOpen = true;
+                messageEl.textContent = "¡TIENDA ABIERTA! (Hasta el próximo cambio de mes)";
+                messageEl.classList.remove('text-red-600');
+                messageEl.classList.add('color-dorado-main');
+            } else {
+                // Estado automático: Si el contador sigue corriendo, está cerrada
+                AppState.tienda.isStoreOpen = false;
+                messageEl.textContent = "La Tienda y Bonos abren el Último Jueves del Mes a las 6PM.";
+                messageEl.classList.remove('text-red-600');
+                messageEl.classList.add('color-dorado-main');
+            }
+            AppUI.updateTiendaButtonStates();
+        },
+
+        // --- HERO CAROUSEL LÓGICA (MODIFICADA PARA SLIDE) ---
+        
+        /**
+         * Muestra el slide por índice y reinicia el carrusel si está activo.
+         * Usa transform: translateX para la animación de deslizamiento.
+         */
+        showHeroSlide: function(index) {
+            const carouselTrack = document.getElementById('hero-carousel');
+            const totalSlides = HERO_SLIDES.length;
+            if (!carouselTrack || totalSlides === 0) return;
+            
+            // 1. Validar índice y actualizar el estado
+            AppState.heroCarousel.currentIndex = index % totalSlides;
+            
+            // 2. Aplicar transformación para deslizar
+            const translateXValue = -100 * AppState.heroCarousel.currentIndex;
+            carouselTrack.style.transform = `translateX(${translateXValue}%)`;
+
+            // 3. Reiniciar el timer si está activo
+            if (AppState.heroCarousel.timer) {
+                AppUI.startHeroCarousel(); 
+            }
+        },
+
+        renderHeroCarousel: function() {
+            const container = document.getElementById('hero-carousel');
+            if (!container) return;
+            
+            // Asegura que el contenedor del carrusel tenga el ancho necesario para todos los slides
+            container.style.width = `${HERO_SLIDES.length * 100}%`;
+            
+            container.innerHTML = HERO_SLIDES.map((slide, index) => {
+                // No necesitamos la clase 'active-slide' ni la transición de opacity
+                return `
+                    <div id="hero-slide-${index}" class="hero-slide ${slide.bgClass} text-white p-8 md:p-12 flex items-center">
+                        <!-- Clases de texto aumentadas y centrado según la solicitud -->
+                        <div class="w-full max-w-4xl mx-auto text-center">
+                            <h2 class="text-4xl md:text-5xl font-extrabold mb-3">${slide.title}</h2>
+                            <p class="text-xl md:text-2xl opacity-90">${slide.subtitle}</p>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            // Asegurar que el primer slide se muestre correctamente al cargar
+            AppUI.showHeroSlide(0); 
+            AppUI.startHeroCarousel();
+        },
+        
+        startHeroCarousel: function() {
+            // Detener el temporizador anterior si existe
+            if (AppState.heroCarousel.timer) { clearInterval(AppState.heroCarousel.timer); }
+
+            const totalSlides = HERO_SLIDES.length;
+            
+            if (totalSlides <= 1) return; // No iniciar si solo hay 1 slide
+            
+            const nextSlide = () => {
+                // Usamos la nueva función showHeroSlide
+                const nextIndex = (AppState.heroCarousel.currentIndex + 1) % totalSlides;
+                AppUI.showHeroSlide(nextIndex);
+            };
+
+            // Iniciar nuevo temporizador
+            AppState.heroCarousel.timer = setInterval(nextSlide, 5000); // 5 segundos
+        },
+        
+        // **********************************************
         // 3. OTRAS FUNCIONES UI (Event Handlers, etc.)
         // **********************************************
         
@@ -936,7 +1171,34 @@ function initializeAppMethods() {
             document.getElementById('tienda-admin-clear-btn').addEventListener('click', AppUI.clearTiendaAdminForm);
 
 
+            // --- LISTENERS BARRA LATERAL (SLIDER BAR) ---
             document.getElementById('toggle-sidebar-btn').addEventListener('click', AppUI.toggleSidebar);
+            document.getElementById('close-sidebar-btn').addEventListener('click', AppUI.hideSidebar);
+            document.getElementById('sidebar-overlay').addEventListener('click', AppUI.hideSidebar); 
+            
+            // Listener para Hover en Desktop (lg:block)
+            const sidebar = document.getElementById('sidebar');
+            const hoverTrigger = document.getElementById('sidebar-hover-trigger');
+            if (sidebar && hoverTrigger) {
+                // Función para mostrar/ocultar barra en hover (solo en desktop)
+                const handleHover = (show) => {
+                    if (window.innerWidth >= 1024) { // 1024px es el breakpoint 'lg' de Tailwind
+                        if (show) {
+                            sidebar.classList.remove('-translate-x-full');
+                        } else {
+                            // Solo ocultar si no estamos interactuando con la sidebar en sí
+                            if (!sidebar.matches(':hover') && !hoverTrigger.matches(':hover')) {
+                                sidebar.classList.add('-translate-x-full');
+                            }
+                        }
+                    }
+                };
+                
+                hoverTrigger.addEventListener('mouseenter', () => handleHover(true));
+                sidebar.addEventListener('mouseleave', () => handleHover(false));
+            }
+
+
             document.querySelectorAll('#transaccion-modal .tab-btn').forEach(button => { button.addEventListener('click', (e) => { AppUI.changeAdminTab(e.target.dataset.tab); }); });
             
             // Setup Autocomplete
@@ -948,10 +1210,18 @@ function initializeAppMethods() {
             AppUI.setupSearchInput('deposito-search-alumno', 'deposito-origen-results', 'depositoAlumno', AppUI.selectFlexibleStudent);
 
             AppUI.mostrarVersionApp();
+            
+            // Inicializar target del contador
+            AppState.countdownTarget = AppUI.calculateNextTargetDate();
+            
+            // Iniciar carrusel y carga de datos
             AppUI.renderHeroCarousel();
             AppData.cargarDatos(false);
+            
+            // Intervalos de actualización
             setInterval(() => AppData.cargarDatos(false), 10000); 
             setInterval(AppUI.updateCountdown, 1000);
+            
         },
 
         showP2PModal: function() {
@@ -1249,68 +1519,6 @@ function initializeAppMethods() {
 
             if (montoInput) montoInput.addEventListener('input', updateFunc);
             if (plazoInput) plazoInput.addEventListener('input', updateFunc);
-        },
-
-        // --- HERO CAROUSEL LÓGICA ---
-        
-        // *NUEVA FUNCIÓN* Muestra el slide por índice y reinicia el carrusel si está activo.
-        showHeroSlide: function(index) {
-            const slides = document.querySelectorAll('.hero-slide');
-            const totalSlides = slides.length;
-            if (totalSlides === 0) return;
-            
-            // 1. Validar índice y actualizar el estado
-            AppState.heroCarousel.currentIndex = index % totalSlides;
-            
-            // 2. Aplicar clases
-            slides.forEach((slide, idx) => {
-                if (idx === AppState.heroCarousel.currentIndex) {
-                    slide.classList.add('active-slide');
-                } else {
-                    slide.classList.remove('active-slide');
-                }
-            });
-
-            // 3. Si el carrusel estaba activo, reiniciamos el timer
-            if (AppState.heroCarousel.timer) {
-                AppUI.startHeroCarousel(); 
-            }
-        },
-
-        renderHeroCarousel: function() {
-            const container = document.getElementById('hero-carousel');
-            if (!container) return;
-            container.innerHTML = HERO_SLIDES.map((slide, index) => {
-                const isActive = index === 0 ? 'active-slide' : '';
-                return `
-                    <div id="hero-slide-${index}" class="hero-slide ${isActive} ${slide.bgClass} text-white p-8 md:p-12 flex items-center">
-                        <div class="max-w-xl">
-                            <h2 class="text-3xl md:text-4xl font-extrabold mb-3">${slide.title}</h2>
-                            <p class="text-lg md:text-xl opacity-90">${slide.subtitle}</p>
-                        </div>
-                    </div>`;
-            }).join('');
-
-            AppUI.startHeroCarousel();
-        },
-        
-        startHeroCarousel: function() {
-            // Detener el temporizador anterior si existe
-            if (AppState.heroCarousel.timer) { clearInterval(AppState.heroCarousel.timer); }
-
-            const slides = document.querySelectorAll('.hero-slide');
-            const totalSlides = slides.length;
-            
-            if (totalSlides <= 1) return; // No iniciar si solo hay 1 slide
-            
-            const nextSlide = () => {
-                // Usamos la nueva función showHeroSlide
-                const nextIndex = (AppState.heroCarousel.currentIndex + 1) % totalSlides;
-                AppUI.showHeroSlide(nextIndex);
-            };
-
-            // Iniciar nuevo temporizador
-            AppState.heroCarousel.timer = setInterval(nextSlide, 5000); // 5 segundos
         },
 
         // --- LEGAL MODAL LÓGICA ---
@@ -1850,6 +2058,7 @@ window.onload = function() {
         const max = input.max ? input.max : 100;
         const val = input.value;
         const percent = ((val - min) / (max - min)) * 100;
+        // Asignamos el fill al estilo del input
         input.style.background = `linear-gradient(to right, #d97706 0%, #d97706 ${percent}%, #cbd5e1 ${percent}%, #cbd5e1 100%)`;
     };
 
