@@ -1,0 +1,222 @@
+/* Estilo base para que Inter sea la fuente por defecto */
+body {
+    font-family: 'Inter', sans-serif;
+    /* Mantenemos el texto base oscuro */
+    color: #1f2937; /* text-gray-800 */
+}
+
+/* Animación de Shake para el modal de clave */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+    20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+.shake {
+    animation: shake 0.5s;
+}
+
+/* Animación de puntos de carga (para el indicador de estado) */
+@keyframes pulse-dot-animation {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3; /* Hacemos el pulso más sutil */
+    }
+}
+.animate-pulse-dot {
+    animation: pulse-dot-animation 1.4s infinite ease-in-out;
+}
+
+/* =================================================================== */
+/* Animación del Botón de Menú (Hamburguesa) y Cierre (X) */
+/* =================================================================== */
+.menu-toggle-icon {
+     transition: transform 0.3s ease-out, color 0.3s ease-out;
+}
+.menu-toggle-icon:hover {
+    color: #d97706; /* amber-600 */
+    transform: rotate(90deg); 
+}
+.modal-close-btn {
+    transition: transform 0.3s ease-out, color 0.3s ease-out;
+}
+.modal-close-btn:hover {
+    transform: rotate(90deg);
+    color: #d97706; /* amber-600 */
+}
+
+/* =================================================================== */
+/* ESTILOS DE SCROLLBAR (Monocromo Gris) */
+/* =================================================================== */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1; 
+    border-radius: 3px;
+    border: 2px solid transparent; 
+    background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; 
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9; 
+    border-radius: 3px;
+}
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE y Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+/* =================================================================== */
+/* Estilos para las Pestañas (Tabs) en el modal de administración */
+/* =================================================================== */
+.tab-btn {
+    border-radius: 0;
+    margin-right: 0.5rem;
+}
+#transaccion-modal .tab-btn.active-tab {
+    border-bottom-color: #d97706 !important; /* amber-600 */
+    color: #d97706 !important; /* amber-600 */
+}
+
+/* Altura unificada para el contenido de las pestañas de admin */
+.tab-content {
+    height: 550px; 
+    overflow-y: auto; 
+}
+
+/* =================================================================== */
+/* Estilos para el contenedor de resultados de búsqueda (Modo Claro) */
+/* =================================================================== */
+.search-results-container {
+    position: absolute;
+    z-index: 10;
+    width: 100%;
+    background-color: white; 
+    border: 1px solid #d1d5db; /* border-gray-300 */
+    border-radius: 0.5rem; /* rounded-lg */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); 
+    margin-top: 0.25rem; /* mt-1 */
+    max-height: 15rem; /* max-h-60 */
+    overflow-y: auto;
+}
+
+/* =================================================================== */
+/* ESTILOS DE TOOLTIP (Modo Oscuro) */
+/* =================================================================== */
+
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-text {
+    visibility: hidden; 
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    background-color: #1f2937; /* bg-gray-800 */
+    color: #ffffff;
+    text-align: left;
+    border-radius: 0.5rem; /* rounded-lg */
+    padding: 0.5rem 0.75rem; 
+    position: absolute;
+    z-index: 50;
+    
+    top: 125%; 
+    bottom: auto; 
+    left: 50%;
+    transform: translateX(-50%); 
+    
+    display: block !important;
+}
+
+.tooltip-text svg {
+    position: absolute;
+    bottom: 100%; 
+    top: auto; 
+    left: 0;
+    width: 100%;
+    height: 0.5rem; 
+    color: #1f2937; 
+}
+
+.tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .tooltip-text {
+        display: none !important;
+    }
+}
+
+/* =================================================================== */
+/* NUEVO: Hero Section (Inspirado en Bancos RD) */
+/* =================================================================== */
+.hero-section-bpd {
+    /* Usamos el gradiente dorado de la marca (amber-500 a amber-600) */
+    background-image: linear-gradient(to right, #f59e0b, #d97706);
+    min-height: 300px; /* Le damos una altura mínima para que se luzca */
+    background-size: cover;
+    background-position: center;
+}
+
+/* Efecto sutil de texto para legibilidad */
+.hero-section-bpd h2, .hero-section-bpd p {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* =================================================================== */
+/* NUEVO: Estilos para Input Range (Slider) de Banca Flexible */
+/* =================================================================== */
+
+/* Estilo general del track */
+.range-lg {
+  height: 8px; /* w-2 */
+  -webkit-appearance: none;
+  background: #cbd5e1; /* slate-300 */
+  border-radius: 4px;
+}
+
+/* Estilo del thumb (el círculo que se mueve) para Chrome/Safari/Edge */
+.range-lg::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; /* tamaño del círculo */
+  height: 16px;
+  border-radius: 50%;
+  background: #d97706; /* amber-600 */
+  cursor: pointer;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+  margin-top: -4px; /* Ajuste para centrar el thumb */
+}
+
+/* Estilo del thumb para Firefox */
+.range-lg::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #d97706; /* amber-600 */
+  cursor: pointer;
+  border: none;
+}
+
+/* Estilo del track para Firefox */
+.range-lg::-moz-range-track {
+  height: 8px;
+  background: #cbd5e1; /* slate-300 */
+  border-radius: 4px;
+}
+
+/* Estilo del progreso (el color antes del thumb) - Esto se maneja con JS para ser compatible */
+/* Sin embargo, definimos el track base que es gris (slate-200) */
+.range-lg:focus {
+  outline: none; /* Eliminar el borde de foco feo */
+}
