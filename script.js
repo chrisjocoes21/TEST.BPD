@@ -1,8 +1,8 @@
 /**
  * ===================================================================
  * CÓDIGO DE FRONTEND (script.js) - Banca Flexible v2.8 (FINAL)
- * CORRECCIÓN CRÍTICA: Inicialización de métodos diferida y reestructurada 
- * para garantizar que todos los objetos estén disponibles antes de la llamada a init().
+ * CORRECCIÓN CRÍTICA: Reestructuración de inicialización (initializeAppMethods)
+ * para resolver dependencias circulares y TypeErrors de carga.
  * ===================================================================
  */
 
@@ -1150,7 +1150,6 @@ function initializeAppMethods() {
                 AppTransacciones.setLoadingState(document.getElementById('transaccion-submit-btn'), document.getElementById('transaccion-btn-text'), false, 'Realizar Transacción');
                 AppUI.clearBonoAdminForm();
                 document.getElementById('bono-admin-status-msg').textContent = "";
-                AppUI.clearTiendaAdminForm();
                 document.getElementById('tienda-admin-status-msg').textContent = "";
             }
             
@@ -1725,6 +1724,7 @@ function initializeAppMethods() {
                     AppUI.renderTiendaItems();
                 } else { throw new Error(result.message || "Error al eliminar el artículo."); }
             } catch (error) { AppTransacciones.setError(statusMsg, error.message); AppData.cargarDatos(false); } 
+            finally { AppUI.clearTiendaAdminForm(); }
         },
         
         toggleStoreManual: async function(status) {
@@ -1831,9 +1831,17 @@ window.onload = function() {
         input.style.background = `linear-gradient(to right, #d97706 0%, #d97706 ${percent}%, #cbd5e1 ${percent}%, #cbd5e1 100%)`;
     };
 
+    // Esto se ejecuta después de init()
     setTimeout(() => {
         document.querySelectorAll('input[type="range"]').forEach(input => {
             updateSliderFill(input);
+            // Agregar listener de input para que el fill se actualice dinámicamente
+            input.addEventListener('input', () => updateSliderFill(input));
         });
+        
+        // Ejecutar updateSliderFill en los inputs de los modales flexibles después de init
+        AppUI.setupFlexibleInputListeners('prestamo');
+        AppUI.setupFlexibleInputListeners('deposito');
+
     }, 100);
 };
