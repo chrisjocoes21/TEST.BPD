@@ -81,7 +81,8 @@ body {
     border-radius: 0;
     margin-right: 0.5rem;
 }
-#transaccion-modal .tab-btn.active-tab {
+#transaccion-modal .tab-btn.active-tab,
+#transacciones-combinadas-modal .tab-btn.active-tab {
     border-bottom-color: #d97706 !important; /* amber-600 */
     color: #d97706 !important; /* amber-600 */
 }
@@ -160,43 +161,38 @@ body {
 
 /* =================================================================== */
 /* Hero Section Dinámica (Carrusel SLIDE) */
-/* NOTA: La animación se controla principalmente en script.js cambiando el transform: translateX del track. */
 /* =================================================================== */
 .hero-section-bpd {
     min-height: 300px;
 }
 
-/* Estilo base de los slides: ahora son elementos flexibles de ancho completo */
+/* Estilo base de los slides */
 .hero-slide {
-    /* Eliminamos todas las reglas de posicionamiento absoluto y opacidad que usaban el fade */
-    /* La transición de transform se aplica al contenedor 'hero-carousel-track' en index.html */
     pointer-events: auto; 
-    
-    /* Asegurar que el contenido se vea bien */
     padding: 2rem 3rem;
     display: flex;
     align-items: center;
-    justify-content: center; /* Centramos el contenido dentro del slide */
-    text-align: center; 
-    
-    /* Sombra de texto para legibilidad sobre el gradiente */
+    justify-content: space-between; 
+    text-align: left; 
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-/* Fondos específicos para cada slide (configurados en JS) */
-.bg-slide-main {
-    background-image: linear-gradient(to right, #f59e0b, #d97706);
+/* Estilos específicos para el slide de reglas */
+.hero-slide:nth-child(2) {
+    text-shadow: none; /* Sin sombra para texto sobre fondo claro */
+    justify-content: flex-start; /* Alinear el contenido a la izquierda/inicio */
+    align-items: flex-start; /* Alinear el contenido arriba */
 }
 
 /* =================================================================== */
 /* ESTILOS PARA INPUT RANGE (SLIDER) CORREGIDO */
-/* Usamos el range-lg ya existente, confiando en el JS para el fill */
+/* Asegura que el relleno de color dorado se vea en el track */
 /* =================================================================== */
 
 .range-lg {
   height: 8px; 
   -webkit-appearance: none;
-  background: #cbd5e1; /* slate-300 */
+  background: #cbd5e1; /* slate-300 - ESTO SERÁ SOBREESCRITO POR JS */
   border-radius: 4px;
 }
 
@@ -222,9 +218,9 @@ body {
   border: none;
 }
 
-/* Estilo del track para Firefox */
+/* Estilo del track para Firefox - Importante para que el relleno del track funcione */
 .range-lg::-moz-range-track {
   height: 8px;
-  background: #cbd5e1; /* slate-300 */
+  background: #cbd5e1; 
   border-radius: 4px;
 }
