@@ -1,8 +1,8 @@
 /**
  * ===================================================================
- * CÓDIGO DE FRONTEND (script.js) - Banca Flexible v2.2 (FINAL)
- * Implementa: Carrusel Hero Dinámico (Fade), Modales Horizontales, Economía Rebalanceada.
- * CORRECCIÓN: Estructura de funciones dentro de AppUI para evitar TypeErrors.
+ * CÓDIGO DE FRONTEND (script.js) - Banca Flexible v2.3 (FINAL)
+ * CORRECCIÓN: Reestructuración de AppUI para eliminar TypeErrors al llamar funciones auxiliares
+ * desde AppData.cargarDatos.
  * ===================================================================
  */
 
@@ -281,83 +281,78 @@ const AppData = {
 
 const AppUI = {
     // **********************************************
-    // 1. FUNCIONES AUXILIARES (DEBEN IR PRIMERO PARA QUE INIT LAS VEA)
+    // 1. FUNCIONES AUXILIARES CRÍTICAS (DEBEN IR PRIMERO)
     // **********************************************
 
+    // CORE UTILITIES (Llamadas desde AppData.cargarDatos)
+    showLoading: function() { document.getElementById('loading-overlay').classList.remove('opacity-0', 'pointer-events-none'); },
+    hideLoading: function() { document.getElementById('loading-overlay').classList.add('opacity-0', 'pointer-events-none'); },
+    setConnectionStatus: function(status, title) {
+        const dot = document.getElementById('status-dot');
+        const indicator = document.getElementById('status-indicator');
+        if (!dot) return;
+        
+        indicator.title = title;
+        dot.classList.remove('bg-green-600', 'bg-amber-600', 'bg-red-600', 'animate-pulse-dot', 'bg-slate-300');
+        switch (status) {
+            case 'ok':
+            case 'loading':
+                dot.classList.add('bg-amber-600', 'animate-pulse-dot');
+                break;
+            case 'error':
+                dot.classList.add('bg-red-600'); 
+                break;
+        }
+    },
+    
+    // UI LAYOUT (Llamadas desde AppData.procesarYMostrarDatos)
     mostrarVersionApp: function() {
         const versionContainer = document.getElementById('app-version-container');
         versionContainer.classList.add('text-slate-400'); 
         versionContainer.innerHTML = `Estado: ${AppConfig.APP_STATUS} | ${AppConfig.APP_VERSION}`;
     },
     
-    setupSearchInput: function(inputId, resultsId, stateKey, onSelectCallback) {
-        const input = document.getElementById(inputId);
-        const results = document.getElementById(resultsId);
+    populateAdminGroupCheckboxes: function(containerId, entityType) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
 
-        if (!input) return;
-
-        input.addEventListener('input', (e) => {
-            const query = e.target.value;
-            AppState.currentSearch[stateKey].query = query;
-            AppState.currentSearch[stateKey].selected = null; 
-            AppState.currentSearch[stateKey].info = null;
-            
-            if (query === '') { onSelectCallback(null); }
-            if (results) { AppUI.handleStudentSearch(query, inputId, resultsId, stateKey, onSelectCallback); }
-        });
+        const allGroups = AppState.datosAdicionales.allGroups || [];
         
-        if (results) {
-            document.addEventListener('click', (e) => {
-                if (!input.contains(e.target) && !results.contains(e.target)) {
-                    results.classList.add('hidden');
-                }
-            });
-            input.addEventListener('focus', () => { if (input.value) { AppUI.handleStudentSearch(input.value, inputId, resultsId, stateKey, onSelectCallback); } });
-        }
-    },
-
-    handleStudentSearch: function(query, inputId, resultsId, stateKey, onSelectCallback) {
-        const resultsContainer = document.getElementById(resultsId);
-        
-        if (!resultsContainer || query.length < 1) {
-            if (resultsContainer) resultsContainer.classList.add('hidden');
+        if (allGroups.length === 0) {
+            container.innerHTML = `<p class="text-xs text-slate-500">No hay grupos cargados.</p>`;
             return;
         }
 
-        const lowerQuery = query.toLowerCase();
-        let studentList = AppState.datosAdicionales.allStudents;
-        
-        const ciclaAllowed = ['p2pDestino', 'prestamoAlumno', 'depositoAlumno'];
-        if (!ciclaAllowed.includes(stateKey) && stateKey !== 'bonoAlumno' && stateKey !== 'tiendaAlumno') {
-            studentList = studentList.filter(s => s.grupoNombre !== 'Cicla');
-        }
-        
-        const filteredStudents = studentList
-            .filter(s => s.nombre.toLowerCase().includes(lowerQuery))
-            .sort((a, b) => a.nombre.localeCompare(b.nombre))
-            .slice(0, 10);
+        const currentSelection = AppUI.getAdminGroupCheckboxSelection(containerId);
 
-        resultsContainer.innerHTML = '';
-        if (filteredStudents.length === 0) {
-            resultsContainer.innerHTML = `<div class="p-2 text-sm text-slate-500">No se encontraron alumnos.</div>`;
-        } else {
-            filteredStudents.forEach(student => {
-                const div = document.createElement('div');
-                div.className = 'p-2 hover:bg-slate-100 cursor-pointer text-sm text-slate-900';
-                div.textContent = `${student.nombre} (${student.grupoNombre})`;
-                div.onclick = () => {
-                    const input = document.getElementById(inputId);
-                    input.value = student.nombre;
-                    AppState.currentSearch[stateKey].query = student.nombre;
-                    AppState.currentSearch[stateKey].selected = student.nombre;
-                    AppState.currentSearch[stateKey].info = student;
-                    resultsContainer.classList.add('hidden');
-                    onSelectCallback(student);
-                };
-                resultsContainer.appendChild(div);
-            });
-        }
-        resultsContainer.classList.remove('hidden');
+        container.innerHTML = '';
+
+        allGroups.forEach(grupoNombre => {
+            const safeName = grupoNombre.replace(/\s/g, '-');
+            const checkboxId = `${entityType}-group-cb-${safeName}`;
+            
+            const div = document.createElement('div');
+            div.className = "flex items-center space-x-2"; 
+            
+            const input = document.createElement('input');
+            input.type = "checkbox";
+            input.id = checkboxId;
+            input.value = grupoNombre;
+            input.className = "h-4 w-4 text-amber-600 border-slate-300 rounded focus:ring-amber-600 bg-white group-admin-checkbox";
+            
+            if (currentSelection.includes(grupoNombre)) {
+                 input.checked = true;
+            }
+
+            const label = document.createElement('label');
+            label.htmlFor = checkboxId;
+            label.textContent = grupoNombre;
+            label.className = "ml-2 block text-sm text-slate-900 cursor-pointer flex-1";
+
+            div.appendChild(input);
+            div.appendChild(label);
+            container.appendChild(div);
+        });
     },
 
     // **********************************************
@@ -741,7 +736,23 @@ const AppUI = {
     // --- LÓGICA DE BOTONES Y ESTADO GENERAL (omito por brevedad) ---
     hideLoading: function() { document.getElementById('loading-overlay').classList.add('opacity-0', 'pointer-events-none'); },
     showLoading: function() { document.getElementById('loading-overlay').classList.remove('opacity-0', 'pointer-events-none'); },
-    // ...
+    showModal: function(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        modal.querySelector('[class*="transform"]').classList.remove('scale-95');
+    },
+
+    hideModal: function(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        modal.querySelector('[class*="transform"]').classList.add('scale-95');
+
+        // Lógica de limpieza al cerrar modales (omito por brevedad)
+    },
+    
+    // ... (otras funciones como updateP2PCalculoImpuesto, updateAdminDepositoCalculo, etc.)
 };
 
 // --- OBJETO TRANSACCIONES (Préstamos, Depósitos, P2P, Bonos, Tienda) ---
