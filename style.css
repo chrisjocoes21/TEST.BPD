@@ -159,33 +159,28 @@ body {
 }
 
 /* =================================================================== */
-/* NUEVO: Hero Section Dinámica (Carrusel Fade) */
+/* Hero Section Dinámica (Carrusel SLIDE) */
+/* NOTA: La animación se controla principalmente en script.js cambiando el transform: translateX del track. */
 /* =================================================================== */
 .hero-section-bpd {
     min-height: 300px;
 }
 
-/* Estilo base de los slides dentro del carrusel */
+/* Estilo base de los slides: ahora son elementos flexibles de ancho completo */
 .hero-slide {
-    position: absolute;
-    inset: 0; /* Cubre todo el contenedor */
-    opacity: 0;
-    transition: opacity 1.0s ease-in-out; /* Animación de 1 segundo */
-    pointer-events: none; /* Ignora clics cuando no está activo */
+    /* Eliminamos todas las reglas de posicionamiento absoluto y opacidad que usaban el fade */
+    /* La transición de transform se aplica al contenedor 'hero-carousel-track' en index.html */
+    pointer-events: auto; 
     
     /* Asegurar que el contenido se vea bien */
     padding: 2rem 3rem;
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center; /* Centramos el contenido dentro del slide */
+    text-align: center; 
     
     /* Sombra de texto para legibilidad sobre el gradiente */
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.hero-slide.active-slide {
-    opacity: 1;
-    pointer-events: auto;
 }
 
 /* Fondos específicos para cada slide (configurados en JS) */
@@ -194,8 +189,8 @@ body {
 }
 
 /* =================================================================== */
-/* NUEVO: Estilos para Input Range (Slider) de Banca Flexible */
-/* Se utiliza la clase 'range-lg' en el HTML junto con JS para el fill. */
+/* ESTILOS PARA INPUT RANGE (SLIDER) CORREGIDO */
+/* Usamos el range-lg ya existente, confiando en el JS para el fill */
 /* =================================================================== */
 
 .range-lg {
@@ -233,5 +228,3 @@ body {
   background: #cbd5e1; /* slate-300 */
   border-radius: 4px;
 }
-
-/* Se asume que el JS (en script.js) aplica el linear-gradient dinámico al estilo 'background' del input para mostrar el progreso dorado. */
