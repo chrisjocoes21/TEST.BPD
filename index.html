@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BPD v27.0 - IMPLEMENTACIÓN DE BANCA FLEXIBLE Y HERO SECTION DINÁMICA -->
+<!-- BPD v28.1 - SIN SCROLL EN MODALES, HERO DE SLIDES INDIVIDUALES -->
 <html lang="es" class="h-full bg-slate-50 overflow-hidden">
 <head>
     <meta charset="UTF-8">
@@ -23,12 +23,18 @@
         .shadow-dorado-soft { --tw-shadow-color: #f59e0b; /* amber-500 */ } 
 
         /* CONTENEDOR UNIFICADO DE MODALES (96% ANCHO) */
-        /* Se usa para Administración, Bonos, Tienda, Transacciones Combinadas y Términos */
+        /* MANTENEMOS EL TAMAÑO AMPLIO PERO SIN SCROLL */
         .full-width-modal-dialog {
              width: 96vw !important; 
              max-width: 96vw !important; 
         }
 
+        /* ALTURA FIJA PARA CONTENIDO DE MODALES SIN SCROLL */
+        .modal-content-fixed-height {
+            height: 550px; /* Altura del contenido del modal */
+            overflow: hidden; /* ELIMINAR SCROLL */
+        }
+        
         /* Animación para el botón de cierre */
         .modal-close-btn {
             transition: transform 0.3s ease-out, color 0.3s ease-out;
@@ -66,11 +72,21 @@
         .hero-slide {
             flex-shrink: 0; /* Evita que los slides se contraigan */
             width: 100%; /* Cada slide ocupa el 100% del ancho del carrusel */
-            position: relative !important; /* Necesario para que flexbox funcione con ancho fijo */
-            inset: auto !important; /* Deshabilitamos el inset: 0 del CSS externo para usar flexbox */
-            opacity: 1 !important; /* Deshabilitamos la opacidad y dejamos que el transform: translateX maneje el cambio */
-            transition: none !important; /* Deshabilitamos la transición de opacidad del CSS externo */
-            pointer-events: auto !important; /* Siempre es accesible, el scroll se maneja por el track */
+            position: relative !important; 
+            inset: auto !important; 
+            opacity: 1 !important; 
+            transition: none !important; 
+            pointer-events: auto !important; 
+            
+            /* Alinear el contenido al inicio del slide (Top-Left) */
+            align-items: flex-start !important; 
+            justify-content: flex-start !important; 
+            text-align: left !important;
+        }
+
+        /* Fondos específicos para el slide principal */
+        .bg-slide-main {
+            background-image: linear-gradient(to right, #f59e0b, #d97706);
         }
         
     </style>
@@ -165,7 +181,6 @@
                         <!-- Botones Principales -->
                         <div class="flex flex-col justify-between gap-4 px-3 bg-white rounded-xl shadow-lg shadow-dorado-soft/10 border border-amber-200 p-4 h-full">
                             <!-- Timer -->
-                            <!-- SEGUNDOS ELIMINADOS DEL CONTADOR -->
                             <div id="countdown-timer" class="flex-shrink-0 text-sm font-medium text-slate-700 flex items-baseline gap-2 justify-center">
                                 <span id="days" class="text-xl font-bold color-dorado-main text-right">00</span><span class="text-xs text-slate-500 uppercase -ml-1">Días</span>
                                 <span id="hours" class="text-xl font-bold color-dorado-main text-right">00</span><span class="text-xs text-slate-500 uppercase -ml-1">Horas</span>
@@ -177,7 +192,6 @@
                             </div>
                             <!-- Botones (Estilo Outline Dorado) -->
                             <div class="flex gap-3 flex-shrink-0 w-full">
-                                <!-- Botón Modificado: Reglas ahora es Transacciones -->
                                 <button id="transacciones-btn" class="flex-1 px-4 py-2 bg-white border border-amber-600 text-amber-600 text-sm font-medium rounded-lg hover:bg-amber-50 transition-colors shadow-sm">
                                     Transacciones
                                 </button>
@@ -200,8 +214,8 @@
                         <!-- El track contiene todos los slides y maneja el deslizamiento horizontal -->
                         <div id="hero-carousel" class="w-full h-full relative hero-carousel-track" style="min-height: 300px;">
                             
-                            <!-- SLIDE 1: DATOS CLAVE Y CTA -->
-                            <div class="hero-slide bg-gradient-to-r from-amber-500 to-amber-600 text-white p-8 md:p-12 flex items-center justify-between">
+                            <!-- SLIDE 1 (HOME): DATOS CLAVE Y CTA -->
+                            <div class="hero-slide bg-slide-main text-white p-8 md:p-12 flex items-center justify-between">
                                 <!-- Zona Izquierda: Datos Clave -->
                                 <div class="w-full lg:w-3/4 text-left max-w-4xl mr-4">
                                     <p class="text-base font-semibold opacity-90 mb-1">
@@ -214,14 +228,15 @@
                                         "Donde el esfuerzo académico tiene su recompensa"
                                     </p>
                                     <ul class="space-y-1 text-sm md:text-lg font-medium opacity-90 list-disc list-inside">
-                                        <li>**Productos Clave:** Préstamos Flexibles y Depósitos de Alto Rendimiento.</li>
-                                        <li>**Servicio:** Transferencias P2P sin comisiones entre usuarios.</li>
-                                        <li>**Meta:** Fomentar el ahorro, la inversión y la gestión responsable.</li>
+                                        <li><span class="font-bold">Productos Clave:</span> Préstamos Flexibles y Depósitos de Alto Rendimiento.</li>
+                                        <li><span class="font-bold">Servicio:</span> Transferencias P2P sin comisiones entre usuarios.</li>
+                                        <li><span class="font-bold">Meta:</span> Fomentar el ahorro, la inversión y la gestión responsable.</li>
                                     </ul>
                                 </div>
                                 <!-- Zona Derecha: Botón CTA -->
                                 <div class="hidden lg:flex lg:w-1/4 justify-end items-center h-full">
                                     <button id="hero-conoce-mas-btn" 
+                                            onclick="AppUI.goToHeroSlide(1)"
                                             class="px-8 py-3 text-lg font-bold rounded-lg bg-white text-amber-600 hover:bg-amber-50 shadow-xl transition-all hover:scale-[1.02] min-w-[180px] max-h-12">
                                         Conoce Más
                                     </button>
@@ -229,24 +244,82 @@
                                 <!-- CTA Móvil (debajo) -->
                                 <div class="lg:hidden w-full mt-6 flex justify-center">
                                      <button id="hero-conoce-mas-btn-mobile" 
+                                            onclick="AppUI.goToHeroSlide(1)"
                                             class="w-full px-8 py-3 text-lg font-bold rounded-lg bg-white text-amber-600 hover:bg-amber-50 shadow-xl transition-all">
                                         Conoce Más
                                     </button>
                                 </div>
                             </div>
-
-                            <!-- SLIDE 2: DETALLES DE REGLAS (Antigua Reglas Modal) -->
-                            <div class="hero-slide bg-slate-50 text-slate-800 p-8 md:p-12 flex items-start flex-col overflow-y-auto no-scrollbar">
-                                <h2 class="text-2xl font-bold color-dorado-main mb-4">
-                                    Detalle de Productos y Reglas
-                                </h2>
-                                <div id="reglas-content" class="space-y-4 text-slate-700 w-full">
-                                    <p class="text-center text-sm text-slate-500">Cargando el detalle de la economía...</p>
-                                </div>
-                                <!-- Botón de volver/cerrar, manejado por JS -->
-                            </div>
                             
-                            <!-- Los demás slides (promociones) se inyectarán aquí por JS -->
+                            <!-- SLIDE 2: DETALLES P2P -->
+                            <div class="hero-slide bg-slate-50 text-slate-800 p-8 md:p-12 flex flex-col">
+                                <div class="w-full max-w-4xl">
+                                    <h2 class="text-2xl font-bold color-dorado-main mb-4">Portal de Transferencias P2P</h2>
+                                    <div id="slide-p2p-content" class="space-y-4 text-slate-700">
+                                        <p><strong>Propósito:</strong> Intercambio directo de Pinceles (ℙ) entre alumnos. Fomenta el comercio y la economía interna.</p>
+                                        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+                                            <li><span class="font-bold">Irrevocabilidad:</span> Toda Transacción P2P confirmada es definitiva.</li>
+                                            <li><span class="font-bold">Costo Operacional:</span> Impuesto/comisión del 5% sobre el monto enviado.</li>
+                                            <li><span class="font-bold">Seguridad:</span> Requiere la Clave P2P personal e intransferible.</li>
+                                            <li><span class="font-bold">Regulación:</span> Uso estrictamente prohibido para fraude o lavado de activos.</li>
+                                        </ul>
+                                    </div>
+                                    <div class="flex justify-between mt-6">
+                                        <button onclick="AppUI.goToHeroSlide(0)" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
+                                            &#8249; Inicio
+                                        </button>
+                                        <button onclick="AppUI.goToHeroSlide(2)" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-amber-600 text-amber-600 hover:bg-amber-50 transition-colors">
+                                            Préstamos &#8250;
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SLIDE 3: DETALLES PRÉSTAMOS -->
+                            <div class="hero-slide bg-slate-50 text-slate-800 p-8 md:p-12 flex flex-col">
+                                <div class="w-full max-w-4xl">
+                                    <h2 class="text-2xl font-bold color-dorado-main mb-4">Préstamos Flexibles</h2>
+                                    <div id="slide-prestamos-content" class="space-y-4 text-slate-700">
+                                        <p><strong>Propósito:</strong> Proporcionar capital líquido a corto plazo a estudiantes elegibles.</p>
+                                        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+                                            <li><span class="font-bold">Montos:</span> Desde 10,000 ℙ hasta 150,000 ℙ.</li>
+                                            <li><span class="font-bold">Plazos:</span> De 3 a 21 días.</li>
+                                            <li><span class="font-bold">Tasa Base:</span> 15% de interés base, más un bono diario por plazo.</li>
+                                            <li><span class="font-bold">Elegibilidad:</span> Requiere saldo positivo y capacidad de pago (monto no debe exceder el 50% del saldo actual).</li>
+                                        </ul>
+                                    </div>
+                                    <div class="flex justify-between mt-6">
+                                        <button onclick="AppUI.goToHeroSlide(1)" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
+                                            &#8249; P2P
+                                        </button>
+                                        <button onclick="AppUI.goToHeroSlide(3)" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-amber-600 text-amber-600 hover:bg-amber-50 transition-colors">
+                                            Depósitos &#8250;
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SLIDE 4: DETALLES DEPÓSITOS -->
+                            <div class="hero-slide bg-slate-50 text-slate-800 p-8 md:p-12 flex flex-col">
+                                <div class="w-full max-w-4xl">
+                                    <h2 class="text-2xl font-bold color-dorado-main mb-4">Depósitos Flexibles (Inversión)</h2>
+                                    <div id="slide-depositos-content" class="space-y-4 text-slate-700">
+                                        <p><strong>Propósito:</strong> Permitir a los alumnos invertir su capital para generar un rendimiento a un plazo fijo.</p>
+                                        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+                                            <li><span class="font-bold">Monto Mínimo:</span> 50,000 ℙ.</li>
+                                            <li><span class="font-bold">Plazos:</span> De 7 a 30 días.</li>
+                                            <li><span class="font-bold">Tasa Base:</span> 5% de interés base, más un bono diario por plazo.</li>
+                                            <li><span class="font-bold">Condición:</span> Fondos congelados hasta el vencimiento. No se puede invertir con un préstamo activo.</li>
+                                            <li><span class="font-bold">Tributación:</span> Intereses generados exentos de impuesto (0% de retención).</li>
+                                        </ul>
+                                    </div>
+                                    <div class="flex justify-start mt-6">
+                                        <button onclick="AppUI.goToHeroSlide(2)" class="px-4 py-2 text-sm font-medium rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
+                                            &#8249; Préstamos
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -299,7 +372,7 @@
         </div>
     </div>
     
-    <!-- MODAL DE TRANSACCIONES COMBINADAS (P2P, PRÉSTAMO, DEPÓSITO) - NUEVO -->
+    <!-- MODAL DE TRANSACCIONES COMBINADAS (P2P, PRÉSTAMO, DEPÓSITO) - SIN SCROLL -->
     <div id="transacciones-combinadas-modal" class="fixed inset-0 bg-slate-900/75 flex items-center justify-center z-[1001] p-4 opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-white rounded-lg shadow-xl full-width-modal-dialog transform scale-95 transition-transform duration-300 overflow-hidden border-2 border-amber-600"> 
             <!-- Header Dorado/Gris -->
@@ -324,25 +397,31 @@
                 </div>
             </div>
 
-            <div id="transacciones-combinadas-content-wrapper" class="p-6 md:p-8 space-y-4 h-[550px] overflow-y-auto pr-2 no-scrollbar">
+            <div id="transacciones-combinadas-content-wrapper" class="p-6 md:p-8 space-y-4 modal-content-fixed-height">
                 
                 <!-- PESTAÑA 1: TRANSFERENCIA P2P -->
+                <!-- Reducción de columnas a 1 en móvil y 2 en desktop, pero usando 1 columna para todo el formulario en desktop para simplificar y evitar scroll. -->
                 <div id="tab-p2p_transfer" class="tab-content"> 
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                    <div class="grid grid-cols-1 gap-6 max-w-lg mx-auto">
+                         <h3 class="text-base font-semibold text-slate-800">Transferencia de Fondos entre Cuentas</h3>
+                         
                          <div class="relative">
                             <label for="p2p-search-origen" class="block text-sm font-medium text-slate-700 mb-1">Tu Nombre (Remitente)</label>
                             <input type="text" id="p2p-search-origen" placeholder="Busca tu nombre..." class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:bg-amber-50/50">
                             <div id="p2p-origen-results" class="search-results-container hidden absolute z-20 w-full bg-white border border-slate-300 rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto"></div>
                         </div>
+                        
                         <div>
                             <label for="p2p-clave" class="block text-sm font-medium text-slate-700 mb-1">Tu Clave P2P</label>
                             <input type="password" id="p2p-clave" placeholder="Ingresa tu clave de 5 dígitos" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:bg-amber-50/50">
                         </div>
+                        
                         <div class="relative">
                             <label for="p2p-search-destino" class="block text-sm font-medium text-slate-700 mb-1">Enviar a (Destinatario)</label>
                             <input type="text" id="p2p-search-destino" placeholder="Busca el nombre del destinatario..." class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:bg-amber-50/50">
                             <div id="p2p-destino-results" class="search-results-container hidden absolute z-10 w-full bg-white border border-slate-300 rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto"></div>
                         </div>
+                        
                         <div>
                             <label for="p2p-cantidad" class="block text-sm font-medium text-slate-700 mb-1">Cantidad a Enviar</label>
                             <input type="number" id="p2p-cantidad" placeholder="Ej: 1000" class="w-full px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:bg-amber-50/50">
@@ -352,7 +431,7 @@
                     
                     <div id="p2p-status-msg" class="text-sm text-center font-medium px-6 pt-4 h-auto min-h-[1rem]"></div>
                     
-                    <div class="mt-6 flex justify-center">
+                    <div class="mt-8 flex justify-center">
                         <button id="p2p-submit-btn" class="px-8 py-2 bg-white border border-amber-600 text-amber-600 text-sm font-medium rounded-lg hover:bg-amber-50 transition-colors shadow-sm min-w-[200px]">
                             <span id="p2p-btn-text">Realizar Transferencia</span>
                         </button>
@@ -382,7 +461,7 @@
                                     <span id="prestamo-plazo-display" class="font-bold color-dorado-main">3 Días</span>
                                 </label>
                                 <input type="range" id="prestamo-plazo-input" min="3" max="21" value="3"
-                                    class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                                    class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer range-lg">
                                 <div class="flex justify-between text-xs text-slate-500 mt-1">
                                     <span>3 Días</span>
                                     <span>21 Días</span>
@@ -460,7 +539,7 @@
                                     <span id="deposito-plazo-display" class="font-bold color-dorado-main">7 Días</span>
                                 </label>
                                 <input type="range" id="deposito-plazo-input" min="7" max="30" value="7"
-                                    class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                                    class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer range-lg">
                                 <div class="flex justify-between text-xs text-slate-500 mt-1">
                                     <span>7 Días</span>
                                     <span>30 Días</span>
@@ -518,14 +597,13 @@
             </div>
             
             <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
-                <!-- Solo el mensaje de estado si lo hubiera, no un segundo botón de submit -->
                 <div id="transacciones-combinadas-status-msg" class="text-sm text-left font-medium color-dorado-main h-auto min-h-[1rem] flex-1 items-center flex"></div>
             </div>
         </div>
     </div>
 
 
-    <!-- MODAL DE ADMINISTRACIÓN (TABS) - Sin cambios, salvo que se añadió el tab de transacciones múltiples en la estructura anterior que se mantiene aquí -->
+    <!-- MODAL DE ADMINISTRACIÓN (TABS) - SIN SCROLL -->
     <div id="transaccion-modal" class="fixed inset-0 bg-slate-900/75 flex items-center justify-center z-[1001] p-4 opacity-0 pointer-events-none transition-opacity duration-300">
         <div id="transaccion-modal-dialog" class="bg-white rounded-lg shadow-xl full-width-modal-dialog transform scale-95 transition-transform duration-300 overflow-hidden border-2 border-amber-600"> 
             <!-- Header Dorado/Gris -->
@@ -556,6 +634,7 @@
             <div id="transaccion-modal-content-wrapper" class="p-6">
                 
                 <!-- PESTAÑA 1: TRANSACCIÓN MÚLTIPLE -->
+                <!-- Mantengo el scroll en estas subsecciones para no limitar las listas, pero elimino el scroll principal -->
                 <div id="tab-transaccion" class="tab-content active no-scrollbar"> 
                     <div class="grid grid-cols-2 gap-4 mb-4">
                         <div>
@@ -586,10 +665,10 @@
                     </div>
                 </div>
 
-                <!-- PESTAÑA 4: GESTIÓN DE BONOS - Sin cambios -->
+                <!-- PESTAÑA 4: GESTIÓN DE BONOS -->
                 <div id="tab-bonos_admin" class="tab-content hidden no-scrollbar">
                      <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                        <div id="bono-admin-form-container" class="lg:col-span-2">
+                        <div id="bono-admin-form-container" class="lg:col-span-2 overflow-y-auto max-h-[480px] pr-2 no-scrollbar">
                             <h3 class="text-lg font-semibold color-dorado-main mb-4">Crear / Actualizar Bono</h3>
                             <form id="bono-admin-form" class="space-y-4">
                                 <div>
@@ -608,7 +687,7 @@
                                 
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1">Grupos Permitidos</label>
-                                    <div id="bono-admin-grupos-checkboxes-container" class="w-full h-auto max-h-48 overflow-y-auto no-scrollbar bg-slate-50 border border-slate-300 rounded-lg p-2 grid grid-cols-3 md:grid-cols-4 gap-x-3 gap-y-1">
+                                    <div id="bono-admin-grupos-checkboxes-container" class="w-full h-auto max-h-24 overflow-y-auto no-scrollbar bg-slate-50 border border-slate-300 rounded-lg p-2 grid grid-cols-3 md:grid-cols-4 gap-x-3 gap-y-1">
                                         <p class="text-xs text-slate-500">Cargando grupos...</p>
                                     </div>
                                 </div>
@@ -631,7 +710,7 @@
                                 <div id="bono-admin-status-msg" class="text-sm text-center font-medium pt-2 h-auto min-h-[1rem]"></div>
                             </form>
                         </div>
-                        <div id="bonos-admin-lista-container" class="lg:col-span-3">
+                        <div id="bonos-admin-lista-container" class="lg:col-span-3 overflow-y-auto max-h-[480px] pr-2 no-scrollbar">
                             <h3 class="text-lg font-semibold color-dorado-main mb-4">Bonos Configurados</h3>
                             <div class="border border-slate-200 rounded-lg overflow-hidden">
                                 <table class="min-w-full divide-y divide-slate-200">
@@ -653,10 +732,10 @@
                     </div>
                 </div>
 
-                <!-- PESTAÑA 5: TIENDA (GESTIÓN) - Sin cambios -->
+                <!-- PESTAÑA 5: TIENDA (GESTIÓN) -->
                 <div id="tab-tienda_gestion" class="tab-content hidden no-scrollbar">
                      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                        <div id="tienda-admin-form-container">
+                        <div id="tienda-admin-form-container" class="overflow-y-auto max-h-[480px] pr-2 no-scrollbar">
                             <h3 class="text-lg font-semibold color-dorado-main mb-4">Crear / Actualizar Artículo</h3>
                             <form id="tienda-admin-form" class="space-y-4">
                                 <div>
@@ -679,7 +758,7 @@
                                 
                                 <div>
                                     <label class="block text-sm font-medium text-slate-700 mb-1">Grupos Permitidos</label>
-                                    <div id="tienda-admin-grupos-checkboxes-container" class="w-full h-auto max-h-48 overflow-y-auto no-scrollbar bg-slate-50 border border-slate-300 rounded-lg p-2 grid grid-cols-3 md:grid-cols-4 gap-x-3 gap-y-1">
+                                    <div id="tienda-admin-grupos-checkboxes-container" class="w-full h-auto max-h-16 overflow-y-auto no-scrollbar bg-slate-50 border border-slate-300 rounded-lg p-2 grid grid-cols-3 md:grid-cols-4 gap-x-3 gap-y-1">
                                          <p class="text-xs text-slate-500">Cargando grupos...</p>
                                     </div>
                                 </div>
@@ -721,9 +800,9 @@
                     </div>
                 </div>
 
-                <!-- PESTAÑA 6: TIENDA (INVENTARIO) - Sin cambios -->
+                <!-- PESTAÑA 6: TIENDA (INVENTARIO) -->
                 <div id="tab-tienda_inventario" class="tab-content hidden no-scrollbar">
-                    <div id="tienda-admin-lista-container">
+                    <div id="tienda-admin-lista-container" class="overflow-y-auto max-h-[480px] pr-2 no-scrollbar">
                         <h3 class="text-lg font-semibold color-dorado-main mb-4">Inventario Actual</h3>
                         <div class="border border-slate-200 rounded-lg overflow-hidden">
                             <table class="min-w-full divide-y divide-slate-200">
@@ -757,7 +836,7 @@
         </div>
     </div>
     
-    <!-- MODAL DE BONOS - Sin cambios -->
+    <!-- MODAL DE BONOS - SIN SCROLL -->
     <div id="bonos-modal" class="fixed inset-0 bg-slate-900/75 flex items-center justify-center z-[1001] p-4 opacity-0 pointer-events-none transition-opacity duration-300">
         <!-- Contenido del modal (sin cambios) -->
         <div id="bonos-modal-dialog" class="bg-white rounded-lg shadow-xl full-width-modal-dialog transform scale-95 transition-transform duration-300 overflow-hidden border-2 border-amber-600">
@@ -768,15 +847,16 @@
                 </div>
             </div>
             
-            <div id="bono-step-list-container" class="p-6 h-[550px] overflow-y-auto pr-2 no-scrollbar">
+            <div id="bono-step-list-container" class="p-6 modal-content-fixed-height">
                 <h3 class="text-lg font-semibold color-dorado-main mb-4">Bonos Disponibles</h3>
-                <div id="bonos-lista-disponible" class="grid grid-cols-1 md:grid-cols-2 gap-3 pr-2 no-scrollbar">
-                    <p class="text-sm text-slate-500 text-center col-span-2">Cargando bonos...</p>
+                <!-- Se reduce el espacio para que quepan más en la vista sin scroll -->
+                <div id="bonos-lista-disponible" class="grid grid-cols-1 md:grid-cols-3 gap-3 pr-2 overflow-y-auto h-[460px]">
+                    <p class="text-sm text-slate-500 text-center col-span-3">Cargando bonos...</p>
                 </div>
             </div>
             
-            <div id="bono-step-form-container" class="p-6 hidden h-[550px] no-scrollbar">
-                 <div class="max-w-md mx-auto space-y-4">
+            <div id="bono-step-form-container" class="p-6 hidden modal-content-fixed-height flex items-center justify-center">
+                 <div class="max-w-md mx-auto space-y-4 w-full">
                     <h3 class="text-lg font-semibold color-dorado-main mb-4">Confirmar Canje</h3>
                     
                     <div id="bono-summary" class="bg-amber-50 border border-amber-200 p-3 rounded-lg">
@@ -813,7 +893,7 @@
         </div>
     </div>
     
-    <!-- MODAL DE TIENDA - Sin cambios -->
+    <!-- MODAL DE TIENDA - SIN SCROLL -->
     <div id="tienda-modal" class="fixed inset-0 bg-slate-900/75 flex items-center justify-center z-[1001] p-4 opacity-0 pointer-events-none transition-opacity duration-300">
         <!-- Contenido del modal (sin cambios) -->
         <div id="tienda-modal-dialog" class="bg-white rounded-lg shadow-xl full-width-modal-dialog transform scale-95 transition-transform duration-300 overflow-hidden border-2 border-amber-600">
@@ -824,15 +904,16 @@
                 </div>
             </div>
             
-            <div id="tienda-step-list-container" class="p-6 space-y-4 h-[550px] overflow-y-auto pr-2 no-scrollbar">
+            <div id="tienda-step-list-container" class="p-6 space-y-4 modal-content-fixed-height">
                 <h3 class="text-lg font-semibold color-dorado-main mb-4">Artículos Disponibles</h3>
-                <div id="tienda-items-container" class="grid grid-cols-1 lg:grid-cols-2 gap-3 pr-2 no-scrollbar bg-white p-4 rounded-lg border border-slate-200 shadow-inner">
-                    <p class="text-sm text-slate-500 text-center col-span-2">Cargando artículos...</p>
+                <!-- Se mantiene el scroll interno en la lista de items para manejar muchos productos -->
+                <div id="tienda-items-container" class="grid grid-cols-1 lg:grid-cols-3 gap-3 pr-2 bg-white p-4 rounded-lg border border-slate-200 shadow-inner overflow-y-auto h-[460px]">
+                    <p class="text-sm text-slate-500 text-center col-span-3">Cargando artículos...</p>
                 </div>
             </div>
             
-            <div id="tienda-step-form-container" class="p-6 hidden h-[550px] no-scrollbar">
-                 <div class="max-w-lg mx-auto space-y-4">
+            <div id="tienda-step-form-container" class="p-6 hidden modal-content-fixed-height flex items-center justify-center">
+                 <div class="max-w-lg mx-auto space-y-4 w-full">
                     <h3 class="text-lg font-semibold color-dorado-main mb-4">Confirmar Compra</h3>
                     
                     <div id="item-summary" class="bg-amber-50 border border-amber-200 p-4 rounded-lg">
@@ -869,7 +950,6 @@
         </div>
     </div>
 
-    <!-- Modal de Reglas (contenido movido al carrusel, este modal es ELIMINADO) -->
     <!-- Modal de Alumno - Sin cambios -->
     <div id="student-modal" class="fixed inset-0 bg-slate-900/75 flex items-center justify-center z-[1002] p-4 opacity-0 pointer-events-none transition-opacity duration-300">
         <div id="student-modal-content" class="bg-white rounded-lg shadow-xl w-full max-w-lg transform scale-95 transition-transform duration-300 border-2 border-amber-600">
@@ -877,7 +957,7 @@
         </div>
     </div>
     
-    <!-- MODAL TÉRMINOS Y CONDICIONES / PRIVACIDAD (NUEVO) -->
+    <!-- MODAL TÉRMINOS Y CONDICIONES / PRIVACIDAD (SIN SCROLL) -->
     <div id="terminos-modal" class="fixed inset-0 bg-slate-900/75 flex items-center justify-center z-[1001] p-4 opacity-0 pointer-events-none transition-opacity duration-300">
         <div class="bg-white rounded-lg shadow-xl full-width-modal-dialog transform scale-95 transition-transform duration-300 border-2 border-amber-600">
             <div class="p-6 md:p-8">
@@ -886,6 +966,7 @@
                     <button id="terminos-modal-close" onclick="AppUI.hideModal('terminos-modal')" class="modal-close-btn text-slate-400 hover:color-dorado-main text-2xl p-1">&times;</button>
                 </div>
                 
+                <!-- ALTURA FIJA PARA EVITAR SCROLL Y MOVER EL CONTENIDO A BASE HTML EN JS -->
                 <div id="terminos-modal-content" class="space-y-6 h-[550px] overflow-y-auto pr-4 text-slate-700 no-scrollbar">
                     <p class="text-center text-sm text-slate-500">Cargando el contrato de uso...</p>
                 </div>
@@ -894,7 +975,6 @@
     </div>
     
     <!-- Lógica de la Aplicación -->
-    <!-- Mantenemos los archivos separados por solicitud del usuario -->
     <script src="script.js" type="module" defer></script>
 </body>
 </html>
