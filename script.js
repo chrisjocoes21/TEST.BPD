@@ -1029,13 +1029,13 @@ const AppUI = {
             const claveEscapada = escapeHTML(bono.clave);
 
             return `
-                <div class="rounded-lg shadow-sm p-4 border transition-all ${cardClass}">
-                    <div class="flex justify-between items-center mb-2">
+                <div class="rounded-lg shadow-sm p-3 border transition-all ${cardClass}">
+                    <div class="flex justify-between items-center mb-1">
                         <span class="text-sm font-medium text-slate-500 truncate">${bono.clave}</span>
                         ${badge}
                     </div>
                     <p class="text-base font-semibold text-slate-900 truncate">${bono.nombre}</p>
-                    <div class="flex justify-between items-baseline mt-3">
+                    <div class="flex justify-between items-baseline mt-2">
                         <span class="text-xs text-slate-500">Quedan ${usosRestantes}</span>
                         <div class="flex items-center space-x-3">
                             <span class="text-xl font-bold color-dorado-main">${recompensa} ℙ</span>
@@ -1235,9 +1235,9 @@ const AppUI = {
             const cardClass = 'bg-white shadow-md border-slate-200';
             const stockText = item.stock === 9999 ? 'Ilimitado' : `Stock: ${item.stock}`;
 
-            html += `
-                <div class="rounded-lg shadow-sm p-4 border transition-all ${cardClass}">
-                    <div class="flex justify-between items-center mb-2">
+            return `
+                <div class="rounded-lg shadow-sm p-3 border transition-all ${cardClass}">
+                    <div class="flex justify-between items-center mb-1">
                         <span class="text-xs font-medium text-slate-500 truncate">${item.Tipo} | ${stockText}</span>
                         <span class="text-xs font-bold bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">DISPONIBLE</span>
                     </div>
@@ -1247,7 +1247,7 @@ const AppUI = {
                             <div class="tooltip-text hidden md:block w-48">${item.descripcion}</div>
                         </span>
                     </p>
-                    <div class="flex justify-between items-baseline mt-3">
+                    <div class="flex justify-between items-baseline mt-2">
                         <span class="text-xs text-slate-500">Base: ${AppFormat.formatNumber(item.precio)} ℙ (+ITBIS)</span>
                         
                         <div class="flex items-center space-x-3">
@@ -1263,7 +1263,7 @@ const AppUI = {
                     </div>
                 </div>
             `;
-        });
+        }).join('');
         
         container.innerHTML = html;
         AppUI.updateTiendaButtonStates();
