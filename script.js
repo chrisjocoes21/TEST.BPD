@@ -1692,7 +1692,10 @@ const AppUI = {
 
     mostrarPantallaNeutral: function(grupos) {
         document.getElementById('main-header-title').textContent = "Bienvenido al Banco del Pincel Dorado";
+        
+        // CORRECCIÓN 2: Ocultar el subtítulo que genera el espacio vacío en el Home
         document.getElementById('page-subtitle').innerHTML = ''; 
+        document.getElementById('page-subtitle').classList.add('hidden');
 
         document.getElementById('table-container').innerHTML = '';
         document.getElementById('table-container').classList.add('hidden');
@@ -1833,6 +1836,9 @@ const AppUI = {
     },
 
     mostrarDatosGrupo: function(grupo) {
+        // CORRECCIÓN 2: Mostrar el subtítulo cuando se ven los datos de un grupo
+        document.getElementById('page-subtitle').classList.remove('hidden');
+
         document.getElementById('main-header-title').textContent = grupo.nombre;
         
         let totalColor = "text-amber-700"; 
@@ -2926,12 +2932,11 @@ const AppTransacciones = {
 };
 
 // --- CONTENIDO ESTATICOS (Términos, Privacidad) ---
-// AJUSTE 3: Textos Legales revisados, sin el nombre completo del banco en el título.
+// CORRECCIÓN 1: Eliminación de los títulos duplicados (solo queda el que está en el <h2> del modal)
 
 const AppContent = {
     // Contenido actualizado y profesional para Términos y Condiciones
     terminosYCondiciones: `
-        <strong class="text-xl font-bold color-dorado-main mb-4 block">Términos y Condiciones de Uso</strong>
         
         <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">I. Alcance y Principios</strong>
         <p>Los presentes Términos y Condiciones rigen el uso de todos los servicios de banca virtual proporcionados por el Banco del Pincel Dorado (BPD). La utilización de cualquiera de estos servicios implica la aceptación total de estas disposiciones y del Reglamento General.</p>
@@ -2972,8 +2977,7 @@ const AppContent = {
     
     // Contenido actualizado y profesional para Acuerdo de Privacidad
     acuerdoDePrivacidad: `
-        <strong class="text-xl font-bold color-dorado-main mb-4 block">Acuerdo de Privacidad y Uso de Datos</strong>
-
+        
         <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">I. Compromiso de la Entidad</strong>
         <p>El Banco del Pincel Dorado (BPD) declara su firme compromiso con la máxima confidencialidad en el manejo de los datos operativos de sus Usuarios. La información es utilizada estrictamente para garantizar la funcionalidad, seguridad y estabilidad de este ecosistema académico-financiero.</p>
 
