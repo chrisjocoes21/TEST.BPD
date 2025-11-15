@@ -162,15 +162,14 @@ body {
 /* =================================================================== */
 /* Hero Section Dinámica (Carrusel SLIDE) */
 /* =================================================================== */
-/* AJUSTE V29.4: Reducción de min-height para evitar scroll vertical en la homepage. */
+/* FIX 1: ALTURA CONSOLIDADA PARA EVITAR EL CLS/SCROLL */
 .hero-section-bpd {
-    min-height: 220px;
+    min-height: 250px;
 }
 
 /* Estilo base de los slides */
 .hero-slide {
     pointer-events: auto; 
-    /* CAMBIO: Padding base reducido. Tailwind (p-6 md:p-8) en index.html tendrá precedencia. */
     padding: 1.5rem 2rem;
     display: flex;
     align-items: center;
@@ -181,9 +180,9 @@ body {
 
 /* Estilos específicos para el slide de reglas */
 .hero-slide:nth-child(2) {
-    text-shadow: none; /* Sin sombra para texto sobre fondo claro */
-    justify-content: flex-start; /* Alinear el contenido a la izquierda/inicio */
-    align-items: flex-start; /* Alinear el contenido arriba */
+    text-shadow: none;
+    justify-content: flex-start;
+    align-items: flex-start;
 }
 
 /* =================================================================== */
