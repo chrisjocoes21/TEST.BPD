@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BPD v29.6 - FIX: HERO COMPACTO, FLUJO, BOTONES CORTOS Y TEXTO HOME ELIMINADO -->
+<!-- BPD v29.7 - FIX: HERO COMPACTO, FLUJO, BOTONES CORTOS Y TEXTO HOME ELIMINADO + Terminología ajustada (v29.7) -->
 <html lang="es" class="h-full bg-slate-50 overflow-hidden">
 <head>
     <meta charset="UTF-8">
@@ -309,11 +309,14 @@
                                             <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
                                                 <li><span class="font-bold">Montos:</span> Desde 10,000 ℙ hasta 150,000 ℙ.</li>
                                                 <li><span class="font-bold">Plazos:</span> De 3 a 21 días (ajustables).</li>
-                                                <li><span class="font-bold">Tasa:</span> Interés competitivo basado en tasas activas reales (aprox. 1.5% mensual base).</li>
+                                                <!-- INICIO CORRECCIÓN TASA DE PRÉSTAMO -->
+                                                <li><span class="font-bold">Tasa:</span> Interés competitivo basado en las tasas activas del banco (aprox. 1.5% mensual base).</li>
+                                                <!-- FIN CORRECCIÓN TASA DE PRÉSTAMO -->
                                                 <li><span class="font-bold">Elegibilidad:</span> Requiere saldo positivo y una capacidad de pago suficiente (monto no debe exceder el 50% del saldo actual).</li>
                                             </ul>
-                                            <!-- AJUSTE USUARIO: Color de texto consejo (text-slate-800) -->
-                                            <p class="text-xs text-slate-800 italic mt-3">Consejo: Si no paga la cuota diaria, el préstamo acumulará una mora realista sobre el saldo pendiente.</p>
+                                            <!-- INICIO CORRECCIÓN MORA PRÉSTAMO -->
+                                            <p class="text-xs text-slate-800 italic mt-3">Consejo: Si no paga la cuota diaria, el préstamo acumulará la mora correspondiente sobre el saldo pendiente.</p>
+                                            <!-- FIN CORRECCIÓN MORA PRÉSTAMO -->
                                         </div>
                                     </div>
                                     <!-- AJUSTE: Botones con clase hero-nav-btn para tamaño consistente -->
@@ -341,7 +344,9 @@
                                             <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
                                                 <li><span class="font-bold">Monto Mínimo:</span> 50,000 ℙ.</li>
                                                 <li><span class="font-bold">Plazos:</span> De 7 a 30 días (ajustables).</li>
-                                                <li><span class="font-bold">Tasa:</span> Interés competitivo basado en tasas pasivas reales (aprox. 0.72% mensual base).</li>
+                                                <!-- INICIO CORRECCIÓN TASA DE DEPÓSITO -->
+                                                <li><span class="font-bold">Tasa:</span> Interés competitivo basado en las tasas pasivas del banco (aprox. 0.72% mensual base).</li>
+                                                <!-- FIN CORRECCIÓN TASA DE DEPÓSITO -->
                                                 <li><span class="font-bold">Condición:</span> Los fondos permanecen congelados hasta el vencimiento. No se puede invertir con un préstamo activo.</li>
                                             </ul>
                                             <!-- AJUSTE USUARIO: Color de texto consejo (text-slate-800) -->
@@ -369,7 +374,9 @@
                                         <h2 class="text-2xl font-bold color-dorado-main mb-4">Impuestos y Comisiones (Regulación)</h2>
                                         <!-- AJUSTE USUARIO: Color de texto unificado (text-slate-800) -->
                                         <div id="slide-impuestos-content" class="space-y-4 text-slate-800">
-                                            <p><strong>Propósito:</strong> Mantener la Tesorería saludable y la economía regulada, simulando la carga tributaria del mundo real.</p>
+                                            <!-- INICIO CORRECCIÓN PROPÓSITO IMPUESTOS -->
+                                            <p><strong>Propósito:</strong> Mantener la Tesorería saludable y regular la economía interna mediante una carga tributaria.</p>
+                                            <!-- FIN CORRECCIÓN PROPÓSITO IMPUESTOS -->
                                             <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
                                                 <!-- AJUSTE USUARIO: Removido ** -->
                                                 <li><span class="font-bold">ITBIS (Tienda):</span> <span class="font-bold">18.0%</span> aplicado a todas las compras de artículos.</li>
