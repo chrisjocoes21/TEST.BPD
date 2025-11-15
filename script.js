@@ -10,18 +10,15 @@ const AppConfig = {
     CACHE_DURATION: 300000,
     
     APP_STATUS: 'RC', 
-    APP_VERSION: 'v29.4 - Final Balance', 
+    APP_VERSION: 'v29.5 - Final Balance', 
     
-    // --- REGLAS DE ECONOMÍA REBALANCEADA Y FLEXIBLE ---
-    // AJUSTE 2.2: Comisión P2P 5% -> 1.0%
-    IMPUESTO_P2P_TASA: 0.01,        
+    // --- REGLAS DE ECONOMÍA REBALANCEADA Y FLEXIBLE (AJUSTE) ---
+    IMPUESTO_P2P_TASA: 0.01,        // 1.0%
     IMPUESTO_DEPOSITO_TASA: 0.0,    
-    // AJUSTE 2.2: Comisión Admin Depósito Mantenida
     IMPUESTO_DEPOSITO_ADMIN: 0.05,
-    // AJUSTE 2.2: ITBIS 10% -> 18.0%
-    TASA_ITBIS: 0.18,               
+    TASA_ITBIS: 0.18,               // 18.0%
     
-    // REGLAS DE PRÉSTAMOS FLEXIBLES (AJUSTE 2.4: Base 15% -> 1.5%, Bonus 0.5% -> 0.03%)
+    // REGLAS DE PRÉSTAMOS FLEXIBLES (AJUSTE 2.4)
     PRESTAMO_TASA_BASE: 0.015,       
     PRESTAMO_BONUS_POR_DIA: 0.0003,  
     PRESTAMO_MIN_MONTO: 10000,
@@ -29,7 +26,7 @@ const AppConfig = {
     PRESTAMO_MIN_PLAZO_DIAS: 3,
     PRESTAMO_MAX_PLAZO_DIAS: 21,
     
-    // REGLAS DE DEPÓSITOS FLEXIBLES (AJUSTE 2.3: Base 5% -> 0.5%, Bonus 0.5% -> 0.0075%)
+    // REGLAS DE DEPÓSITOS FLEXIBLES (AJUSTE 2.3)
     DEPOSITO_TASA_BASE: 0.005,       
     DEPOSITO_BONUS_POR_DIA: 0.000075, 
     DEPOSITO_MIN_MONTO: 50000,
@@ -1434,6 +1431,7 @@ const AppUI = {
 
         AppState.datosActuales.forEach(grupo => {
             // SOLUCIÓN 3.2: Permitir que "Cicla" aparezca en el panel de Admin, siempre y cuando no sea un grupo vacío (a menos que sea Cicla).
+            // (Se deja el grupo.nombre !== 'Banco' fuera de este filtro, ya que 'Banco' nunca tiene usuarios).
             if (grupo.total === 0 && grupo.nombre !== 'Cicla') return;
 
             const div = document.createElement('div');
@@ -1913,7 +1911,7 @@ const AppUI = {
         const createStat = (label, value, valueClass = 'text-slate-900') => `
             <div class="bg-slate-50 p-4 rounded-lg text-center border border-slate-200">
                 <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">${label}</div>
-                <div class="text-2xl font-bold ${valueClass} truncate">${value}</div>
+                <div class="2xl font-bold ${valueClass} truncate">${value}</div>
             </div>
         `;
 
@@ -1931,7 +1929,7 @@ const AppUI = {
             <div class="p-6 relative">
                 <div class="flex justify-between items-start mb-4 pr-12">
                     <div>
-                        <h2 class="text-xl font-semibold color-dorado-main">${student.nombre}</h2>
+                        <h2 class="xl font-semibold color-dorado-main">${student.nombre}</h2>
                         <p class="text-sm font-medium text-slate-500">${grupo.nombre}</p>
                     </div>
                 </div>
