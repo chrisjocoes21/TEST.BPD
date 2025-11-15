@@ -10,7 +10,7 @@ const AppConfig = {
     CACHE_DURATION: 300000,
     
     APP_STATUS: 'RC', 
-    APP_VERSION: 'v29.5 - Final Balance', 
+    APP_VERSION: 'v29.6 - Final Balance', 
     
     // --- REGLAS DE ECONOMÍA REBALANCEADA Y FLEXIBLE (AJUSTE) ---
     IMPUESTO_P2P_TASA: 0.01,        // 1.0%
@@ -270,10 +270,8 @@ const AppData = {
         const isTiendaModalOpen = document.getElementById('tienda-modal').classList.contains('opacity-0') === false;
         const isTransaccionesCombinadasOpen = document.getElementById('transacciones-combinadas-modal').classList.contains('opacity-0') === false;
         
+        // Si los modales están abiertos, forzar el renderizado de la lista
         if (isBonoModalOpen) AppUI.populateBonoList();
-        
-        // CORRECCIÓN 1.1: Si el modal de la tienda está abierto, actualiza los items.
-        // Esto asegura que si se abrió mientras cargaba (porque eliminamos el "return"), se llene al recibir los datos.
         if (isTiendaModalOpen) AppUI.renderTiendaItems();
         
         if (isBonoModalOpen || isTiendaModalOpen) {
@@ -941,10 +939,19 @@ const AppUI = {
     // --- FUNCIONES DE BONOS (FLUJO DE 2 PASOS) ---
     
     showBonoModal: function() {
-        if (!AppState.datosActuales) return;
+        // AJUSTE 1: Eliminamos el chequeo de AppState.datosActuales para no bloquear el modal si está cargando.
         AppUI.showBonoStep1();
-        AppUI.populateBonoList();
         AppUI.showModal('bonos-modal');
+
+        const container = document.getElementById('bonos-lista-disponible');
+
+        if (!AppState.datosActuales) {
+            // Mostrar estado de carga si los datos aún no están
+            if(container) container.innerHTML = `<p class="text-sm text-slate-500 text-center col-span-3">Cargando bonos...</p>`;
+        } else {
+            // Si los datos ya existen, proceder con la lógica normal
+            AppUI.populateBonoList();
+        }
     },
 
     showBonoStep1: function() {
@@ -1003,7 +1010,8 @@ const AppUI = {
 
 
         if (bonosActivos.length === 0) {
-            container.innerHTML = `<p class="text-sm text-slate-500 text-center col-span-1 md:col-span-2">No hay bonos disponibles en este momento.</p>`;
+            // AJUSTE 2: Usar col-span-3 para centrar correctamente el mensaje
+            container.innerHTML = `<p class="text-sm text-slate-500 text-center col-span-3">No hay bonos disponibles en este momento.</p>`;
             return;
         }
         
@@ -1180,6 +1188,7 @@ const AppUI = {
         // Seguridad: Si aún no hay datos, muestra carga.
         if (!AppState.datosActuales) {
              const container = document.getElementById('tienda-items-container');
+             // Ya usa col-span-3 y text-center
              if(container) container.innerHTML = `<p class="text-sm text-slate-500 text-center col-span-3">Cargando artículos...</p>`;
              return;
         }
@@ -1211,6 +1220,7 @@ const AppUI = {
 
 
         if (itemsActivos.length === 0) {
+            // Ya usa col-span-3 y text-center
             container.innerHTML = `<p class="text-sm text-slate-500 text-center col-span-3">No hay artículos disponibles para ti en este momento.</p>`;
             return;
         }
@@ -2916,12 +2926,12 @@ const AppTransacciones = {
 };
 
 // --- CONTENIDO ESTATICOS (Términos, Privacidad) ---
-// AJUSTE 1.3 y 1.4: Textos Legales revisados, sin <h3> ni detalles técnicos.
+// AJUSTE 3: Textos Legales revisados, sin el nombre completo del banco en el título.
 
 const AppContent = {
     // Contenido actualizado y profesional para Términos y Condiciones
     terminosYCondiciones: `
-        <strong class="text-xl font-bold color-dorado-main mb-4 block">Términos y Condiciones de Uso del Banco del Pincel Dorado (BPD)</strong>
+        <strong class="text-xl font-bold color-dorado-main mb-4 block">Términos y Condiciones de Uso</strong>
         
         <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">I. Alcance y Principios</strong>
         <p>Los presentes Términos y Condiciones rigen el uso de todos los servicios de banca virtual proporcionados por el Banco del Pincel Dorado (BPD). La utilización de cualquiera de estos servicios implica la aceptación total de estas disposiciones y del Reglamento General.</p>
@@ -2949,7 +2959,7 @@ const AppContent = {
         </ul>
 
         <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">IV. Condiciones para Depósitos Flexibles (Inversiones)</strong>
-        <p>Servicio para incentivar el ahorro y la generación de rendimientos pasivos.</p>
+        <p>Servicio para incentivar el ahorro y la planificación financiera a medio plazo.</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
             <li><strong>Rendimiento:</strong> La ganancia se determina por una Tasa Base (${AppConfig.DEPOSITO_TASA_BASE * 100}% base) más un factor de rendimiento diario (${AppConfig.DEPOSITO_BONUS_POR_DIA * 100}% por día).</li>
             <li><strong>Retención de Capital:</strong> El capital invertido y los rendimientos generados permanecerán inmovilizados hasta la fecha de vencimiento.</li>
@@ -2962,7 +2972,7 @@ const AppContent = {
     
     // Contenido actualizado y profesional para Acuerdo de Privacidad
     acuerdoDePrivacidad: `
-        <strong class="text-xl font-bold color-dorado-main mb-4 block">Acuerdo de Privacidad y Uso de Datos del BPD</strong>
+        <strong class="text-xl font-bold color-dorado-main mb-4 block">Acuerdo de Privacidad y Uso de Datos</strong>
 
         <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">I. Compromiso de la Entidad</strong>
         <p>El Banco del Pincel Dorado (BPD) declara su firme compromiso con la máxima confidencialidad en el manejo de los datos operativos de sus Usuarios. La información es utilizada estrictamente para garantizar la funcionalidad, seguridad y estabilidad de este ecosistema académico-financiero.</p>
