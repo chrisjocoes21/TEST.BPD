@@ -10,7 +10,7 @@ const AppConfig = {
     CACHE_DURATION: 300000,
     
     APP_STATUS: 'RC', 
-    APP_VERSION: 'v29.0 - Académico', 
+    APP_VERSION: 'v29.1 - Profesional', 
     
     // --- REGLAS DE ECONOMÍA REBALANCEADA Y FLEXIBLE ---
     IMPUESTO_P2P_TASA: 0.05,        // Antes 0.10
@@ -2068,10 +2068,10 @@ const AppUI = {
         let title, contentHTML;
 
         if (type === 'terminos') {
-            title = "Términos y Condiciones de Uso del Banco";
+            title = "Términos y Condiciones";
             contentHTML = AppContent.terminosYCondiciones;
         } else if (type === 'privacidad') {
-            title = "Acuerdo de Privacidad y Uso de Datos";
+            title = "Acuerdo de Privacidad";
             contentHTML = AppContent.acuerdoDePrivacidad;
         } else {
             return;
@@ -2939,77 +2939,78 @@ const AppTransacciones = {
 // --- CONTENIDO ESTATICOS (Términos, Privacidad) ---
 
 const AppContent = {
-    // Contenido extendido y estructurado basado en el documento P2P + nuevos productos
+    // Contenido actualizado y profesional para Términos y Condiciones
     terminosYCondiciones: `
-        <h2 class="text-xl font-bold color-dorado-main mb-4">CONTRATO DE TÉRMINOS Y CONDICIONES DE USO DEL BANCO DEL PINCEL DORADO (BPD)</h2>
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">I. DEFINICIONES Y ALCANCE</h3>
-        <p>El uso de cualquiera de los servicios de banca virtual del BPD (Transferencias entre Cuentas, Préstamos, Depósitos, Tienda) implica la total e incondicional aceptación de este Contrato y del Reglamento General del BPD.</p>
+        <h3 class="text-xl font-bold color-dorado-main mb-4">Términos y Condiciones de Uso del Banco del Pincel Dorado (BPD)</h3>
+        
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">I. Alcance de la Regulación</h3>
+        <p>Los presentes Términos y Condiciones rigen el uso de todos los servicios de banca virtual proporcionados por el Banco del Pincel Dorado (BPD), incluyendo Transferencias entre Cuentas, Préstamos Flexibles, Depósitos Flexibles y la Tienda de Artículos. La utilización de cualquiera de estos servicios constituye una aceptación total e incondicional de estas disposiciones y del Reglamento General del BPD.</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Usuario:</strong> Cualquier alumno activo.</li>
-            <li><strong>Pinceles (ℙ):</strong> Unidad monetaria virtual sin valor fuera del ecosistema académico.</li>
-            <li><strong>Clave P2P:</strong> Contraseña personal e intransferible para autorizar transacciones.</li>
-            <li><strong>Tesorería:</strong> Fondo central del BPD para garantizar la sostenibilidad.</li>
+            <li><strong>Usuario:</strong> Cualquier alumno activo dentro del ecosistema.</li>
+            <li><strong>Pinceles (ℙ):</strong> Unidad monetaria virtual de uso exclusivo en el ámbito académico.</li>
+            <li><strong>Clave P2P:</strong> Código personal e intransferible necesario para autorizar y autenticar transacciones.</li>
+            <li><strong>Tesorería:</strong> Fondo operativo central del BPD destinado a asegurar la liquidez y la sostenibilidad del sistema.</li>
         </ul>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">II. SERVICIO DE TRANSFERENCIAS ENTRE CUENTAS</h3>
-        <p>Permite la transferencia de Pinceles entre Usuarios.</p>
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">II. Disposiciones sobre Transferencias entre Cuentas</h3>
+        <p>Este servicio facilita la movilización de Pinceles entre las cuentas de los Usuarios.</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Irrevocabilidad:</strong> Toda Transferencia confirmada es definitiva. El BPD no ofrece reembolsos salvo error técnico imputable al sistema.</li>
-            <li><strong>Impuesto a la Transacción:</strong> Aplica un impuesto/comisión del <strong>${AppConfig.IMPUESTO_P2P_TASA * 100}%</strong> sobre el monto enviado, debitado del Remitente, destinado a la Tesorería.</li>
-            <li><strong>Responsabilidad de la Clave:</strong> El Usuario es el único responsable de la custodia de su Clave P2P.</li>
+            <li><strong>Naturaleza Irrevocable:</strong> Toda Transacción de Transferencia confirmada es definitiva e irreversible. El BPD no procesará solicitudes de anulación ni reembolso, salvo evidencia de un error técnico documentado y atribuible al sistema.</li>
+            <li><strong>Costo Operacional:</strong> Se aplicará una comisión del <strong>${AppConfig.IMPUESTO_P2P_TASA * 100}%</strong> sobre el monto enviado, la cual será debitada de la cuenta del Usuario Remitente para contribuir a la Tesorería.</li>
+            <li><strong>Seguridad y Autenticación:</strong> El Usuario asume la responsabilidad exclusiva de la protección de su Clave P2P, siendo esta la única prueba de la autenticidad y autorización de cualquier Transferencia.</li>
         </ul>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">III. PRÉSTAMOS FLEXIBLES</h3>
-        <p>El BPD otorga financiamiento bajo las siguientes condiciones:</p>
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">III. Normativa de Préstamos Flexibles</h3>
+        <p>El BPD pone a disposición líneas de financiamiento sujetas a las siguientes condiciones financieras y de cumplimiento:</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Términos:</strong> El interés total se calcula con una Tasa Base (${AppConfig.PRESTAMO_TASA_BASE * 100}%) más un bono diario (${AppConfig.PRESTAMO_BONUS_POR_DIA * 100}%) por el plazo seleccionado (entre ${AppConfig.PRESTAMO_MIN_PLAZO_DIAS} y ${AppConfig.PRESTAMO_MAX_PLAZO_DIAS} días).</li>
-            <li><strong>Obligación:</strong> El Usuario se compromete a pagar el monto total (capital + interés) en las cuotas diarias resultantes. El incumplimiento resultará en la congelación de la cuenta y la acumulación de cargos adicionales.</li>
-            <li><strong>Elegibilidad:</strong> El BPD se reserva el derecho de rechazar solicitudes basadas en el historial crediticio o el saldo actual del solicitante.</li>
+            <li><strong>Cálculo de Intereses:</strong> El interés aplicable se calcula a partir de una Tasa Base (${AppConfig.PRESTAMO_TASA_BASE * 100}%) más un incremento diario (${AppConfig.PRESTAMO_BONUS_POR_DIA * 100}%) en función del plazo seleccionado (periodos entre ${AppConfig.PRESTAMO_MIN_PLAZO_DIAS} y ${AppConfig.PRESTAMO_MAX_PLAZO_DIAS} días).</li>
+            <li><strong>Compromiso de Reembolso:</strong> El Usuario prestatario está obligado a devolver el monto total financiado (capital más intereses) mediante cuotas diarias en el plazo acordado. El incumplimiento de pago resultará en la aplicación de cargos moratorios y la congelación inmediata de la cuenta.</li>
+            <li><strong>Criterios de Elegibilidad:</strong> La aprobación de un préstamo queda a discreción del BPD, basándose en la evaluación del historial transaccional y el saldo actual del solicitante.</li>
         </ul>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">IV. DEPÓSITOS FLEXIBLES (INVERSIONES)</h3>
-        <p>El BPD capta fondos del Usuario para generar rendimientos.</p>
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">IV. Condiciones para Depósitos Flexibles (Inversiones)</h3>
+        <p>Mediante este servicio, el Usuario puede invertir fondos de su cuenta para generar rendimientos financieros.</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Términos:</strong> El rendimiento se calcula con una Tasa Base (${AppConfig.DEPOSITO_TASA_BASE * 100}%) más un bono diario (${AppConfig.DEPOSITO_BONUS_POR_DIA * 100}%) por el plazo seleccionado.</li>
-            <li><strong>Restricción:</strong> El monto invertido y los intereses acumulados serán retenidos hasta el vencimiento del plazo. La cancelación anticipada puede conllevar una penalización.</li>
-            <li><strong>Tributación:</strong> Los intereses generados están exentos de impuestos (0% de retención).</li>
+            <li><strong>Rendimiento:</strong> La ganancia se determina por una Tasa Base (${AppConfig.DEPOSITO_TASA_BASE * 100}%) más un factor de rendimiento diario (${AppConfig.DEPOSITO_BONUS_POR_DIA * 100}%) calculado sobre el plazo de inversión.</li>
+            <li><strong>Retención de Capital:</strong> El capital invertido y los rendimientos generados permanecerán inmovilizados hasta la fecha de vencimiento. La solicitud de retiro anticipado puede estar sujeta a penalizaciones.</li>
         </ul>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">V. SANCIONES Y USO INDEBIDO</h3>
-        <p>Queda estrictamente prohibido utilizar cualquier servicio del BPD para cualquier actividad que contravenga las Normas de Convivencia y el Reglamento Académico.</p>
-        <p>El incumplimiento podrá ser sancionado con la congelación de la cuenta, la reversión de transacciones, o la exclusión permanente del sistema. La naturaleza y la duración de la sanción serán determinadas únicamente por los administradores del BPD.</p>
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">V. Sanciones por Uso Indebido</h3>
+        <p>Se prohíbe estrictamente el uso de cualquier componente del BPD (incluyendo Transferencias y otros servicios) para realizar actividades que violen las Normas de Convivencia o el Reglamento Académico.</p>
+        <p>La violación de esta normativa resultará en medidas disciplinarias que pueden incluir la congelación temporal o permanente de la cuenta, y la reversión de transacciones. La naturaleza y la duración de la sanción serán determinadas exclusivamente por la administración del BPD.</p>
     `,
     
-    // Contenido nuevo para la política de privacidad
+    // Contenido actualizado y profesional para Acuerdo de Privacidad
     acuerdoDePrivacidad: `
-        <h2 class="text-xl font-bold color-dorado-main mb-4">ACUERDO DE PRIVACIDAD Y USO DE DATOS DEL BPD</h2>
-        <p>El Banco del Pincel Dorado (BPD) se compromete con la transparencia en el manejo de los datos de sus Usuarios, los cuales son utilizados exclusivamente para la funcionalidad, seguridad y estabilidad del ecosistema económico académico.</p>
+        <h3 class="text-xl font-bold color-dorado-main mb-4">Acuerdo de Privacidad y Uso de Datos del BPD</h3>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">I. DATOS RECOPILADOS</h3>
-        <p>El BPD recopila y procesa los siguientes tipos de datos:</p>
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">I. Compromiso de Transparencia</h3>
+        <p>El Banco del Pincel Dorado (BPD) declara su firme compromiso con la máxima transparencia en el procesamiento de los datos de sus Usuarios. La información recopilada será empleada estrictamente para garantizar la funcionalidad, seguridad y estabilidad de nuestro ecosistema académico-financiero.</p>
+
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">II. Recopilación de Datos</h3>
+        <p>El BPD únicamente registra y procesa la siguiente información operativa:</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Datos de Identificación:</strong> Nombre de Usuario y Grupo Académico.</li>
-            <li><strong>Datos Financieros Internos:</strong> Saldo de Pinceles (ℙ), historial de Transacciones (Transferencias entre Cuentas, Depósitos, Préstamos), Clave P2P (almacenada en formato encriptado, nunca visible).</li>
-            <li><strong>Metadatos:</strong> Fecha, hora y tipo de transacción.</li>
+            <li><strong>Identificación Interna:</strong> Nombre de Usuario y designación de Grupo Académico.</li>
+            <li><strong>Datos Financieros:</strong> Saldo actual de Pinceles (ℙ), el historial completo de Transacciones (Transferencias, Depósitos y Préstamos), y la Clave P2P (almacenada mediante procesos de cifrado avanzado para impedir su visibilidad).</li>
+            <li><strong>Metadatos:</strong> Registros automáticos de la fecha, hora y tipo de cada operación.</li>
         </ul>
-        <p class="mt-2 font-semibold">El BPD NO recopila información personal sensible (como direcciones de correo, números de teléfono o datos bancarios del mundo real).</p>
+        <p class="mt-2 font-semibold">El BPD no solicita ni almacena, bajo ninguna circunstancia, datos personales sensibles o información bancaria del mundo real.</p>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">II. FINALIDAD DEL USO DE DATOS</h3>
-        <p>La información recopilada tiene como único fin:</p>
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">III. Finalidad del Procesamiento de Datos</h3>
+        <p>El procesamiento de la información tiene por objeto exclusivo:</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li>Garantizar la correcta ejecución de las transacciones (ej. Transferencias entre Cuentas).</li>
-            <li>Calcular saldos, intereses y cuotas de préstamos.</li>
-            <li>Monitorear la estabilidad económica y detectar patrones de actividad atípica.</li>
-            <li>Proveer reportes de desempeño financiero a los administradores del BPD.</li>
+            <li>Asegurar la correcta y segura ejecución de todas las operaciones (ej. Transferencias entre Cuentas).</li>
+            <li>Realizar los cálculos precisos de saldos, rendimientos de inversión e intereses crediticios.</li>
+            <li>Mantener el monitoreo continuo de la estabilidad económica y la detección preventiva de cualquier patrón de actividad anómala.</li>
+            <li>Proveer a la administración del BPD los reportes necesarios para evaluar el desempeño y la gestión académica.</li>
         </ul>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">III. ALMACENAMIENTO Y SEGURIDAD</h3>
-        <p>Los datos son almacenados en una base de datos segura y de acceso restringido (Google Sheets/Script), accesible únicamente por los administradores del BPD mediante clave maestra.</p>
-        <p>La Clave P2P, aunque necesaria para autorizar transacciones, nunca se transmite en texto plano y no es visible para el Administrador; sin embargo, el Usuario acepta que su uso es la única prueba de la autenticidad de la transacción.</p>
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">IV. Protocolos de Seguridad y Almacenamiento</h3>
+        <p>Los datos son custodiados en una base de datos de acceso altamente restringido (Google Sheets/Script), accesible exclusivamente por los administradores autorizados del BPD. La Clave P2P se utiliza como método de autenticación transaccional; aunque nunca se revela, el Usuario acepta que su uso constituye la prueba fehaciente de la autorización de la operación.</p>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">IV. CUMPLIMIENTO Y CONSENTIMIENTO</h3>
-        <p>El Usuario, al utilizar el BPD, otorga su consentimiento expreso para la recopilación y el procesamiento de sus datos de transacción, reconociendo que esta actividad es vital para la operación del sistema.</p>
-        <p>El BPD no compartirá ni venderá datos de Usuarios a terceros fuera del entorno académico.</p>
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">V. Consentimiento y Distribución</h3>
+        <p>El Usuario, al interactuar con el BPD, otorga su consentimiento implícito e irrevocable para la recopilación y el procesamiento de sus datos de transacción, reconociendo que este procedimiento es fundamental para la operatividad integral del sistema.</p>
+        <p>El BPD garantiza que no compartirá, venderá ni distribuirá datos de Usuarios a ninguna entidad ajena al entorno académico.</p>
     `
 };
 
