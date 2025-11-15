@@ -10,25 +10,28 @@ const AppConfig = {
     CACHE_DURATION: 300000,
     
     APP_STATUS: 'RC', 
-    APP_VERSION: 'v29.2 - Contador Estático', 
+    APP_VERSION: 'v29.4 - Final Balance', 
     
     // --- REGLAS DE ECONOMÍA REBALANCEADA Y FLEXIBLE ---
-    IMPUESTO_P2P_TASA: 0.05,        // Antes 0.10
-    IMPUESTO_DEPOSITO_TASA: 0.0,    // Antes 0.05 (Se elimina impuesto sobre interés)
+    // AJUSTE 2.2: Comisión P2P 5% -> 1.0%
+    IMPUESTO_P2P_TASA: 0.01,        
+    IMPUESTO_DEPOSITO_TASA: 0.0,    
+    // AJUSTE 2.2: Comisión Admin Depósito Mantenida
     IMPUESTO_DEPOSITO_ADMIN: 0.05,
-    TASA_ITBIS: 0.10,               // Antes 0.18
+    // AJUSTE 2.2: ITBIS 10% -> 18.0%
+    TASA_ITBIS: 0.18,               
     
-    // REGLAS DE PRÉSTAMOS FLEXIBLES (Debe coincidir con el Backend)
-    PRESTAMO_TASA_BASE: 0.15,       // 15% de interés base
-    PRESTAMO_BONUS_POR_DIA: 0.005,  // 0.5% extra por día
+    // REGLAS DE PRÉSTAMOS FLEXIBLES (AJUSTE 2.4: Base 15% -> 1.5%, Bonus 0.5% -> 0.03%)
+    PRESTAMO_TASA_BASE: 0.015,       
+    PRESTAMO_BONUS_POR_DIA: 0.0003,  
     PRESTAMO_MIN_MONTO: 10000,
     PRESTAMO_MAX_MONTO: 150000,
     PRESTAMO_MIN_PLAZO_DIAS: 3,
     PRESTAMO_MAX_PLAZO_DIAS: 21,
     
-    // REGLAS DE DEPÓSITOS FLEXIBLES (Debe coincidir con el Backend)
-    DEPOSITO_TASA_BASE: 0.05,       // 5% de interés base
-    DEPOSITO_BONUS_POR_DIA: 0.005,  // 0.5% extra por día
+    // REGLAS DE DEPÓSITOS FLEXIBLES (AJUSTE 2.3: Base 5% -> 0.5%, Bonus 0.5% -> 0.0075%)
+    DEPOSITO_TASA_BASE: 0.005,       
+    DEPOSITO_BONUS_POR_DIA: 0.000075, 
     DEPOSITO_MIN_MONTO: 50000,
     DEPOSITO_MIN_PLAZO_DIAS: 7,
     DEPOSITO_MAX_PLAZO_DIAS: 30,
@@ -79,9 +82,9 @@ const AppState = {
         selectedItem: null,
     },
     
-    // ESTADO: Hero ahora tiene 4 slides (0-Home, 1-Transferencia, 2-Prestamo, 3-Deposito)
+    // AJUSTE 4.2: Hero ahora tiene 6 slides (0-5)
     heroSlideIndex: 0,
-    heroSlideCount: 4, 
+    heroSlideCount: 6, 
 };
 
 // --- AUTENTICACIÓN ---
@@ -271,6 +274,9 @@ const AppData = {
         const isTransaccionesCombinadasOpen = document.getElementById('transacciones-combinadas-modal').classList.contains('opacity-0') === false;
         
         if (isBonoModalOpen) AppUI.populateBonoList();
+        
+        // CORRECCIÓN 1.1: Si el modal de la tienda está abierto, actualiza los items.
+        // Esto asegura que si se abrió mientras cargaba (porque eliminamos el "return"), se llene al recibir los datos.
         if (isTiendaModalOpen) AppUI.renderTiendaItems();
         
         if (isBonoModalOpen || isTiendaModalOpen) {
@@ -327,8 +333,8 @@ const AppUI = {
         
         // Listeners para Hero Carousel
         // Se establecen los listeners para los botones de navegación del carrusel
-        document.getElementById('hero-conoce-mas-btn')?.addEventListener('click', () => AppUI.goToHeroSlide(1));
-        document.getElementById('hero-conoce-mas-btn-mobile')?.addEventListener('click', () => AppUI.goToHeroSlide(1));
+        // AJUSTE 4.2: Actualización de listeners (el botón "Conoce Más" ha sido eliminado del HTML)
+        document.getElementById('hero-slide-0-next')?.addEventListener('click', () => AppUI.goToHeroSlide(1));
 
         document.querySelectorAll('.slide-next-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -412,7 +418,8 @@ const AppUI = {
         AppUI.mostrarVersionApp();
         
         AppData.cargarDatos(false);
-        setInterval(() => AppData.cargarDatos(false), 10000); 
+        // AJUSTE 4.3: Reducir la frecuencia de recarga de datos de 10s a 30s
+        setInterval(() => AppData.cargarDatos(false), 30000); 
         AppUI.updateCountdown();
         setInterval(AppUI.updateCountdown, 1000);
     },
@@ -499,7 +506,7 @@ const AppUI = {
         const totalAPagar = Math.ceil(monto + interesTotal);
         const cuotaDiaria = Math.ceil(totalAPagar / plazo);
         
-        tasaDisplay.textContent = `${(tasaDecimal * 100).toFixed(1)}%`;
+        tasaDisplay.textContent = `${(tasaDecimal * 100).toFixed(2)}%`; // Mostrar más decimales para las tasas bajas
         totalPagarDisplay.textContent = `${AppFormat.formatNumber(totalAPagar)} ℙ`;
         cuotaDiariaDisplay.textContent = `${AppFormat.formatNumber(cuotaDiaria)} ℙ`;
 
@@ -547,7 +554,7 @@ const AppUI = {
         const interesBruto = monto * tasaDecimal;
         const totalARecibir = Math.ceil(monto + interesBruto);
         
-        tasaDisplay.textContent = `${(tasaDecimal * 100).toFixed(1)}%`;
+        tasaDisplay.textContent = `${(tasaDecimal * 100).toFixed(3)}%`; // Mostrar más decimales para las tasas bajas
         gananciaDisplay.textContent = `${AppFormat.formatNumber(Math.ceil(interesBruto))} ℙ`;
         totalRecibirDisplay.textContent = `${AppFormat.formatNumber(totalARecibir)} ℙ`;
         
@@ -1114,22 +1121,22 @@ const AppUI = {
     
     // --- FUNCIONES DE TIENDA ---
 
+    // CORRECCIÓN 1.1: Se elimina la restricción inicial para abrir el modal (Fix Botón Tienda)
     showTiendaModal: function() {
-        if (!AppState.datosActuales) return;
+        AppUI.showModal('tienda-modal'); // Abrir modal siempre
         AppUI.showTiendaStep1();
         
         const container = document.getElementById('tienda-items-container');
-        const isLoading = container.innerHTML.includes('Cargando artículos...');
         
-        if (isLoading || container.innerHTML.trim() === '') {
-            AppUI.renderTiendaItems();
+        if (!AppState.datosActuales) {
+            // Mostrar estado de carga si los datos aún no están
+            if(container) container.innerHTML = `<p class="text-sm text-slate-500 text-center col-span-3">Cargando artículos...</p>`;
         } else {
-            AppUI.updateTiendaButtonStates();
+            // Si los datos ya existen, proceder con la lógica normal
+            AppUI.renderTiendaItems();
         }
         
         AppUI.updateTiendaAdminStatusLabel();
-        
-        AppUI.showModal('tienda-modal');
     },
 
     showTiendaStep1: function() {
@@ -1172,6 +1179,13 @@ const AppUI = {
 
     renderTiendaItems: function() {
         if (document.getElementById('tienda-modal').classList.contains('opacity-0')) return;
+
+        // Seguridad: Si aún no hay datos, muestra carga.
+        if (!AppState.datosActuales) {
+             const container = document.getElementById('tienda-items-container');
+             if(container) container.innerHTML = `<p class="text-sm text-slate-500 text-center col-span-3">Cargando artículos...</p>`;
+             return;
+        }
 
         const container = document.getElementById('tienda-items-container');
         const items = AppState.tienda.items;
@@ -1419,7 +1433,8 @@ const AppUI = {
         grupoContainer.innerHTML = ''; 
 
         AppState.datosActuales.forEach(grupo => {
-            if (grupo.nombre === 'Cicla' || grupo.total === 0) return;
+            // SOLUCIÓN 3.2: Permitir que "Cicla" aparezca en el panel de Admin, siempre y cuando no sea un grupo vacío (a menos que sea Cicla).
+            if (grupo.total === 0 && grupo.nombre !== 'Cicla') return;
 
             const div = document.createElement('div');
             div.className = "flex items-center p-1 rounded hover:bg-slate-200";
@@ -1645,8 +1660,9 @@ const AppUI = {
     
     // --- Lógica del Carrusel Hero ---
     
+    // AJUSTE 4.2: Lógica de navegación ajustada para 6 slides y sin dots
     goToHeroSlide: function(index) {
-        // Validación de límites del carrusel
+        // Validación de límites del carrusel (Ahora 0 a 5)
         if (index < 0 || index >= AppState.heroSlideCount) {
              // Si intenta ir más allá, regresa al inicio o permanece en el límite
              index = Math.max(0, Math.min(index, AppState.heroSlideCount - 1));
@@ -2855,6 +2871,7 @@ const AppTransacciones = {
                 if (attempt === maxRetries - 1) throw error;
             }
             const delay = initialDelay * Math.pow(2, attempt) + Math.random() * 1000;
+            // No loguear retries
             await new Promise(resolve => setTimeout(resolve, delay));
         }
         throw new Error('Failed to fetch after multiple retries.');
@@ -2901,80 +2918,77 @@ const AppTransacciones = {
 };
 
 // --- CONTENIDO ESTATICOS (Términos, Privacidad) ---
+// AJUSTE 1.3 y 1.4: Textos Legales revisados, sin <h3> ni detalles técnicos.
 
 const AppContent = {
     // Contenido actualizado y profesional para Términos y Condiciones
     terminosYCondiciones: `
-        <h3 class="text-xl font-bold color-dorado-main mb-4">Términos y Condiciones de Uso del Banco del Pincel Dorado (BPD)</h3>
+        <strong class="text-xl font-bold color-dorado-main mb-4 block">Términos y Condiciones de Uso del Banco del Pincel Dorado (BPD)</strong>
         
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">I. Alcance de la Regulación</h3>
-        <p>Los presentes Términos y Condiciones rigen el uso de todos los servicios de banca virtual proporcionados por el Banco del Pincel Dorado (BPD), incluyendo Transferencias entre Cuentas, Préstamos Flexibles, Depósitos Flexibles y la Tienda de Artículos. La utilización de cualquiera de estos servicios constituye una aceptación total e incondicional de estas disposiciones y del Reglamento General del BPD.</p>
+        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">I. Alcance y Principios</strong>
+        <p>Los presentes Términos y Condiciones rigen el uso de todos los servicios de banca virtual proporcionados por el Banco del Pincel Dorado (BPD). La utilización de cualquiera de estos servicios implica la aceptación total de estas disposiciones y del Reglamento General.</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
             <li><strong>Usuario:</strong> Cualquier alumno activo dentro del ecosistema.</li>
             <li><strong>Pinceles (ℙ):</strong> Unidad monetaria virtual de uso exclusivo en el ámbito académico.</li>
-            <li><strong>Clave P2P:</strong> Código personal e intransferible necesario para autorizar y autenticar transacciones.</li>
-            <li><strong>Tesorería:</strong> Fondo operativo central del BPD destinado a asegurar la liquidez y la sostenibilidad del sistema.</li>
+            <li><strong>Clave P2P:</strong> Código personal e intransferible necesario para autorizar transacciones.</li>
+            <li><strong>Tesorería:</strong> Fondo operativo central del BPD destinado a asegurar la liquidez y sostenibilidad del sistema.</li>
         </ul>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">II. Disposiciones sobre Transferencias entre Cuentas</h3>
-        <p>Este servicio facilita la movilización de Pinceles entre las cuentas de los Usuarios.</p>
+        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">II. Normativa de Transferencias (P2P)</strong>
+        <p>Este servicio facilita el intercambio de valor entre cuentas de Usuarios.</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Naturaleza Irrevocable:</strong> Toda Transacción de Transferencia confirmada es definitiva e irreversible. El BPD no procesará solicitudes de anulación ni reembolso, salvo evidencia de un error técnico documentado y atribuible al sistema.</li>
-            <li><strong>Costo Operacional:</strong> Se aplicará una comisión del <strong>${AppConfig.IMPUESTO_P2P_TASA * 100}%</strong> sobre el monto enviado, la cual será debitada de la cuenta del Usuario Remitente para contribuir a la Tesorería.</li>
-            <li><strong>Seguridad y Autenticación:</strong> El Usuario asume la responsabilidad exclusiva de la protección de su Clave P2P, siendo esta la única prueba de la autenticidad y autorización de cualquier Transferencia.</li>
+            <li><strong>Irrevocabilidad:</strong> Toda Transferencia confirmada es definitiva e irreversible.</li>
+            <li><strong>Costo Operacional:</strong> Se aplicará una comisión del <strong>${AppConfig.IMPUESTO_P2P_TASA * 100}%</strong> sobre el monto enviado, la cual será debitada de la cuenta del Usuario Remitente.</li>
+            <li><strong>Seguridad:</strong> El Usuario es responsable de la protección de su Clave P2P.</li>
         </ul>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">III. Normativa de Préstamos Flexibles</h3>
-        <p>El BPD pone a disposición líneas de financiamiento sujetas a las siguientes condiciones financieras y de cumplimiento:</p>
+        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">III. Normativa de Préstamos Flexibles</strong>
+        <p>Líneas de financiamiento sujetas a condiciones de cumplimiento y liquidez.</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Cálculo de Intereses:</strong> El interés aplicable se calcula a partir de una Tasa Base (${AppConfig.PRESTAMO_TASA_BASE * 100}%) más un incremento diario (${AppConfig.PRESTAMO_BONUS_POR_DIA * 100}%) en función del plazo seleccionado (periodos entre ${AppConfig.PRESTAMO_MIN_PLAZO_DIAS} y ${AppConfig.PRESTAMO_MAX_PLAZO_DIAS} días).</li>
-            <li><strong>Compromiso de Reembolso:</strong> El Usuario prestatario está obligado a devolver el monto total financiado (capital más intereses) mediante cuotas diarias en el plazo acordado. El incumplimiento de pago resultará en la aplicación de cargos moratorios y la congelación inmediata de la cuenta.</li>
-            <li><strong>Criterios de Elegibilidad:</strong> La aprobación de un préstamo queda a discreción del BPD, basándose en la evaluación del historial transaccional y el saldo actual del solicitante.</li>
+            <li><strong>Cálculo de Intereses:</strong> Interés determinado por una Tasa Base (${AppConfig.PRESTAMO_TASA_BASE * 100}% base) más un factor diario (${AppConfig.PRESTAMO_BONUS_POR_DIA * 100}% por día) según el plazo (3 a 21 días).</li>
+            <li><strong>Compromiso de Reembolso:</strong> El Usuario prestatario está obligado a devolver el capital más intereses en cuotas diarias. El incumplimiento resulta en la aplicación de cargos moratorios.</li>
+            <li><strong>Elegibilidad:</strong> La aprobación se basa en la evaluación de saldo y capacidad de pago.</li>
         </ul>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">IV. Condiciones para Depósitos Flexibles (Inversiones)</h3>
-        <p>Mediante este servicio, el Usuario puede invertir fondos de su cuenta para generar rendimientos financieros.</p>
+        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">IV. Condiciones para Depósitos Flexibles (Inversiones)</strong>
+        <p>Servicio para incentivar el ahorro y la generación de rendimientos pasivos.</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Rendimiento:</strong> La ganancia se determina por una Tasa Base (${AppConfig.DEPOSITO_TASA_BASE * 100}%) más un factor de rendimiento diario (${AppConfig.DEPOSITO_BONUS_POR_DIA * 100}%) calculado sobre el plazo de inversión.</li>
-            <li><strong>Retención de Capital:</strong> El capital invertido y los rendimientos generados permanecerán inmovilizados hasta la fecha de vencimiento. La solicitud de retiro anticipado puede estar sujeta a penalizaciones.</li>
+            <li><strong>Rendimiento:</strong> La ganancia se determina por una Tasa Base (${AppConfig.DEPOSITO_TASA_BASE * 100}% base) más un factor de rendimiento diario (${AppConfig.DEPOSITO_BONUS_POR_DIA * 100}% por día).</li>
+            <li><strong>Retención de Capital:</strong> El capital invertido y los rendimientos generados permanecerán inmovilizados hasta la fecha de vencimiento.</li>
         </ul>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">V. Sanciones por Uso Indebido</h3>
+        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">V. Sanciones por Incumplimiento</strong>
         <p>Se prohíbe estrictamente el uso de cualquier componente del BPD (incluyendo Transferencias y otros servicios) para realizar actividades que violen las Normas de Convivencia o el Reglamento Académico.</p>
-        <p>La violación de esta normativa resultará en medidas disciplinarias que pueden incluir la congelación temporal o permanente de la cuenta, y la reversión de transacciones. La naturaleza y la duración de la sanción serán determinadas exclusivamente por la administración del BPD.</p>
+        <p>La violación de esta normativa resultará en medidas disciplinarias determinadas por el BPD, que pueden incluir la congelación temporal o permanente de la cuenta, y la reversión de transacciones.</p>
     `,
     
     // Contenido actualizado y profesional para Acuerdo de Privacidad
     acuerdoDePrivacidad: `
-        <h3 class="text-xl font-bold color-dorado-main mb-4">Acuerdo de Privacidad y Uso de Datos del BPD</h3>
+        <strong class="text-xl font-bold color-dorado-main mb-4 block">Acuerdo de Privacidad y Uso de Datos del BPD</strong>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">I. Compromiso de Transparencia</h3>
-        <p>El Banco del Pincel Dorado (BPD) declara su firme compromiso con la máxima transparencia en el procesamiento de los datos de sus Usuarios. La información recopilada será empleada estrictamente para garantizar la funcionalidad, seguridad y estabilidad de nuestro ecosistema académico-financiero.</p>
+        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">I. Compromiso de la Entidad</strong>
+        <p>El Banco del Pincel Dorado (BPD) declara su firme compromiso con la máxima confidencialidad en el manejo de los datos operativos de sus Usuarios. La información es utilizada estrictamente para garantizar la funcionalidad, seguridad y estabilidad de este ecosistema académico-financiero.</p>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">II. Recopilación de Datos</h3>
-        <p>El BPD únicamente registra y procesa la siguiente información operativa:</p>
+        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">II. Datos Recopilados</strong>
+        <p>El BPD únicamente registra y procesa la siguiente información operativa, esencial para el funcionamiento del sistema:</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Identificación Interna:</strong> Nombre de Usuario y designación de Grupo Académico.</li>
-            <li><strong>Datos Financieros:</strong> Saldo actual de Pinceles (ℙ), el historial completo de Transacciones (Transferencias, Depósitos y Préstamos), y la Clave P2P (almacenada mediante procesos de cifrado avanzado para impedir su visibilidad).</li>
+            <li><strong>Identificación:</strong> Nombre de Usuario y designación de Grupo Académico.</li>
+            <li><strong>Datos Financieros:</strong> Saldo actual de Pinceles (ℙ), el historial completo de Transacciones y la Clave P2P (gestionada de forma segura).</li>
             <li><strong>Metadatos:</strong> Registros automáticos de la fecha, hora y tipo de cada operación.</li>
         </ul>
-        <p class="mt-2 font-semibold">El BPD no solicita ni almacena, bajo ninguna circunstancia, datos personales sensibles o información bancaria del mundo real.</p>
+        <p class="mt-2 font-semibold">El BPD garantiza que no recopila ni almacena, bajo ninguna circunstancia, datos personales sensibles del mundo real o información bancaria externa.</p>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">III. Finalidad del Procesamiento de Datos</h3>
+        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">III. Propósito de la Información</strong>
         <p>El procesamiento de la información tiene por objeto exclusivo:</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li>Asegurar la correcta y segura ejecución de todas las operaciones (ej. Transferencias entre Cuentas).</li>
+            <li>Asegurar la correcta y segura ejecución de todas las operaciones financieras.</li>
             <li>Realizar los cálculos precisos de saldos, rendimientos de inversión e intereses crediticios.</li>
             <li>Mantener el monitoreo continuo de la estabilidad económica y la detección preventiva de cualquier patrón de actividad anómala.</li>
-            <li>Proveer a la administración del BPD los reportes necesarios para evaluar el desempeño y la gestión académica.</li>
+            <li>Garantizar el cumplimiento de las normativas internas del BPD.</li>
         </ul>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">IV. Protocolos de Seguridad y Almacenamiento</h3>
-        <p>Los datos son custodiados en una base de datos de acceso altamente restringido (Google Sheets/Script), accesible exclusivamente por los administradores autorizados del BPD. La Clave P2P se utiliza como método de autenticación transaccional; aunque nunca se revela, el Usuario acepta que su uso constituye la prueba fehaciente de la autorización de la operación.</p>
-
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">V. Consentimiento y Distribución</h3>
-        <p>El Usuario, al interactuar con el BPD, otorga su consentimiento implícito e irrevocable para la recopilación y el procesamiento de sus datos de transacción, reconociendo que este procedimiento es fundamental para la operatividad integral del sistema.</p>
-        <p>El BPD garantiza que no compartirá, venderá ni distribuirá datos de Usuarios a ninguna entidad ajena al entorno académico.</p>
+        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">IV. Confidencialidad y Uso</strong>
+        <p>El Usuario, al interactuar con el BPD, otorga su consentimiento para el procesamiento de sus datos de transacción. La información es de acceso altamente restringido y el BPD garantiza que no compartirá, venderá ni distribuirá datos de Usuarios a ninguna entidad ajena al entorno académico.</p>
     `
 };
 
