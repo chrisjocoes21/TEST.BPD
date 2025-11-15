@@ -1029,13 +1029,13 @@ const AppUI = {
             const claveEscapada = escapeHTML(bono.clave);
 
             return `
-                <div class="rounded-lg shadow-sm p-3 border transition-all ${cardClass}">
+                <div class="rounded-lg shadow-sm p-2 border transition-all ${cardClass}">
                     <div class="flex justify-between items-center mb-1">
                         <span class="text-sm font-medium text-slate-500 truncate">${bono.clave}</span>
                         ${badge}
                     </div>
                     <p class="text-base font-semibold text-slate-900 truncate">${bono.nombre}</p>
-                    <div class="flex justify-between items-baseline mt-2">
+                    <div class="flex justify-between items-baseline mt-1">
                         <span class="text-xs text-slate-500">Quedan ${usosRestantes}</span>
                         <div class="flex items-center space-x-3">
                             <span class="text-xl font-bold color-dorado-main">${recompensa} ℙ</span>
@@ -1236,7 +1236,7 @@ const AppUI = {
             const stockText = item.stock === 9999 ? 'Ilimitado' : `Stock: ${item.stock}`;
 
             return `
-                <div class="rounded-lg shadow-sm p-3 border transition-all ${cardClass}">
+                <div class="rounded-lg shadow-sm p-2 border transition-all ${cardClass}">
                     <div class="flex justify-between items-center mb-1">
                         <span class="text-xs font-medium text-slate-500 truncate">${item.Tipo} | ${stockText}</span>
                         <span class="text-xs font-bold bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">DISPONIBLE</span>
@@ -1247,7 +1247,7 @@ const AppUI = {
                             <div class="tooltip-text hidden md:block w-48">${item.descripcion}</div>
                         </span>
                     </p>
-                    <div class="flex justify-between items-baseline mt-2">
+                    <div class="flex justify-between items-baseline mt-1">
                         <span class="text-xs text-slate-500">Base: ${AppFormat.formatNumber(item.precio)} ℙ (+ITBIS)</span>
                         
                         <div class="flex items-center space-x-3">
@@ -1835,7 +1835,7 @@ const AppUI = {
         
     },
 
-    mostrarDatosGrupo: function(grupo) {
+    mostrarDatosGrupo: function(grupos) {
         // CORRECCIÓN 2: Mostrar el subtítulo cuando se ven los datos de un grupo
         document.getElementById('page-subtitle').classList.remove('hidden');
 
@@ -2394,6 +2394,8 @@ const AppTransacciones = {
         
         const listContainer = document.getElementById('bonos-lista-disponible');
         const clickedBtn = listContainer.querySelector(`#bono-btn-${bonoClave}`);
+        
+        // --- CORRECCIÓN DE FLUJO: Deshabilitar temporalmente el botón ---
         if (clickedBtn) {
             clickedBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
             clickedBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
@@ -2401,27 +2403,31 @@ const AppTransacciones = {
             clickedBtn.textContent = "Cargando...";
         }
 
+        if (!bono) {
+            AppTransacciones.setError(statusMsg, "Error interno: Bono no encontrado.");
+            return;
+        }
+
         if (bono.usos_actuales >= bono.usos_totales) {
              AppTransacciones.setError(statusMsg, "Bono agotado, intente más tarde.");
-             if (clickedBtn) {
-                clickedBtn.textContent = "Canjear";
-                clickedBtn.classList.remove('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
-                clickedBtn.classList.add('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
-                clickedBtn.disabled = false;
-             }
-             return;
+        } else if (bono.expiracion_fecha && new Date(bono.expiracion_fecha).getTime() < Date.now()) {
+             AppTransacciones.setError(statusMsg, "Este bono ha expirado.");
+        } else {
+            AppUI.showBonoStep2(bonoClave);
         }
-        
-        AppUI.showBonoStep2(bonoClave);
 
+        // --- CORRECCIÓN DE FLUJO: Restablecer el botón inmediatamente después de la validación ---
         setTimeout(() => {
             if (clickedBtn) {
                 clickedBtn.textContent = "Canjear";
                 clickedBtn.classList.remove('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
-                clickedBtn.classList.add('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
-                clickedBtn.disabled = false;
+                // Solo restablecer si no está agotado o expirado
+                if (bono.usos_actuales < bono.usos_totales && (!bono.expiracion_fecha || new Date(bono.expiracion_fecha).getTime() >= Date.now())) {
+                    clickedBtn.classList.add('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+                    clickedBtn.disabled = false;
+                }
             }
-        }, 500);
+        }, 50); 
     },
 
     confirmarCanje: async function() {
@@ -2618,6 +2624,7 @@ const AppTransacciones = {
         const statusMsg = document.getElementById('tienda-status-msg');
         const buyBtn = document.getElementById(`buy-btn-${itemId}`);
         
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
         if (buyBtn) {
             buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
             buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
@@ -2629,15 +2636,18 @@ const AppTransacciones = {
 
         if (!item) {
             AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
-            if (buyBtn) AppUI.updateTiendaButtonStates();
-            return;
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
+        } else if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+            AppTransacciones.setError(statusMsg, "Este artículo ha expirado.");
+        } else {
+            AppUI.showTiendaStep2(itemId);
         }
-
-        AppUI.showTiendaStep2(itemId);
         
+        // --- Corrección de Flujo: Restablecer el botón inmediatamente después de la validación ---
         setTimeout(() => {
-            if (buyBtn) AppUI.updateTiendaButtonStates();
-        }, 500);
+             if (buyBtn) AppUI.updateTiendaButtonStates(); // Esta función restablece el estado si es necesario.
+        }, 50);
     },
 
     confirmarCompra: async function() {
