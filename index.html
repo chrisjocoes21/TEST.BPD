@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BPD v29.5 - FIX: HERO COMPACTO, FLUJO, BOTONES LARGOS Y CONTADOR GRIS CLARO -->
+<!-- BPD v29.6 - FIX: HERO COMPACTO, FLUJO, BOTONES CORTOS Y TEXTO HOME ELIMINADO -->
 <html lang="es" class="h-full bg-slate-50 overflow-hidden">
 <head>
     <meta charset="UTF-8">
@@ -63,17 +63,17 @@
         .hero-carousel-track {
             display: flex; /* Necesario para la animación de deslizamiento */
             transition: transform 0.5s ease-in-out;
+            /* AJUSTE USUARIO: Altura más compacta */
             height: 100%; /* Asegura que la pista ocupe la altura del contenedor */
-            /* FIX 1: ALTURA MÁS COMPACTA Y CONSISTENTE (AJUSTE DEL USUARIO) */
-            min-height: 200px; 
+            min-height: 180px; 
         }
         .hero-carousel-container {
             overflow: hidden; /* Oculta los slides fuera de vista */
         }
-        /* FIX 2: Contenedor interno que garantiza altura para evitar el salto vertical (AJUSTE DEL USUARIO) */
+        /* AJUSTE USUARIO: Contenedor interno más compacto */
         .hero-slide-content {
             height: 100%;
-            min-height: 180px; /* Base para evitar el CLS */
+            min-height: 160px; /* Altura base para evitar el CLS */
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -238,10 +238,10 @@
                                 <!-- FIX 1: Contenido con altura fija para evitar saltos de pantalla -->
                                 <div class="hero-slide-content w-full flex flex-col justify-between">
                                     <div>
-                                        <p class="text-lg font-semibold opacity-90 mb-1">
+                                        <!-- FRASAE ELIMINADA: <p class="text-lg font-semibold opacity-90 mb-1">
                                             Educación Financiera y Cívica Académica.
-                                        </p>
-                                        <h2 class="text-4xl md:text-5xl font-extrabold mb-3">
+                                        </p> -->
+                                        <h2 class="text-4xl md:text-5xl font-extrabold mb-3 mt-1">
                                             Banco del Pincel Dorado
                                         </h2>
                                         <!-- AJUSTE USUARIO: Se quitó mb-4 -->
@@ -255,19 +255,19 @@
                                         </ul>
                                     </div>
                                     
-                                    <!-- Botón CTA para saltar al siguiente slide (Transferencias) (AJUSTE USUARIO: Alinear a la derecha) -->
+                                    <!-- Botón CTA para saltar al siguiente slide (Transferencias) (AJUSTE USUARIO: Alinear a la derecha y texto a "Explorar") -->
                                     <div class="w-full mt-6 flex justify-end">
                                         <button id="hero-slide-0-next" 
                                                 onclick="AppUI.goToHeroSlide(1)"
                                                 class="hero-nav-btn px-8 py-2 text-sm font-bold rounded-lg bg-transparent border-2 border-white text-white hover:bg-white/20 shadow-xl transition-all">
-                                            Explorar Servicios
+                                            Explorar
                                         </button>
                                     </div>
                                 </div>
                             </div>
                             
                             <!-- SLIDE 1: DETALLES TRANSFERENCIAS -->
-                            <div class="hero-slide bg-slate-50 text-slate-800 p-6 md:p-8 flex flex-col">
+                            <div class="hero-slide bg-slate-50 p-6 md:p-8 flex flex-col">
                                 <div class="hero-slide-content w-full">
                                     <div>
                                         <h2 class="text-2xl font-bold color-dorado-main mb-4">Portal de Transferencias (P2P)</h2>
@@ -299,7 +299,7 @@
                             </div>
 
                             <!-- SLIDE 2: DETALLES PRÉSTAMOS -->
-                            <div class="hero-slide bg-slate-50 text-slate-800 p-6 md:p-8 flex flex-col">
+                            <div class="hero-slide bg-slate-50 p-6 md:p-8 flex flex-col">
                                 <div class="hero-slide-content w-full">
                                     <div>
                                         <h2 class="text-2xl font-bold color-dorado-main mb-4">Préstamos Flexibles (Banca Activa)</h2>
@@ -331,7 +331,7 @@
                             </div>
 
                             <!-- SLIDE 3: DETALLES DEPÓSITOS -->
-                            <div class="hero-slide bg-slate-50 text-slate-800 p-6 md:p-8 flex flex-col">
+                            <div class="hero-slide bg-slate-50 p-6 md:p-8 flex flex-col">
                                 <div class="hero-slide-content w-full">
                                     <div>
                                         <h2 class="text-2xl font-bold color-dorado-main mb-4">Depósitos a Plazo (Inversión Pasiva)</h2>
@@ -363,7 +363,7 @@
                             </div>
                             
                             <!-- SLIDE 4: IMPUESTOS Y COMISIONES (NUEVO) -->
-                            <div class="hero-slide bg-slate-50 text-slate-800 p-6 md:p-8 flex flex-col">
+                            <div class="hero-slide bg-slate-50 p-6 md:p-8 flex flex-col">
                                 <div class="hero-slide-content w-full">
                                     <div>
                                         <h2 class="text-2xl font-bold color-dorado-main mb-4">Impuestos y Comisiones (Regulación)</h2>
@@ -395,7 +395,7 @@
                             </div>
 
                             <!-- SLIDE 5: BONOS Y TIENDA (NUEVO) -->
-                            <div class="hero-slide bg-slate-50 text-slate-800 p-6 md:p-8 flex flex-col">
+                            <div class="hero-slide bg-slate-50 p-6 md:p-8 flex flex-col">
                                 <div class="hero-slide-content w-full">
                                     <div>
                                         <h2 class="text-2xl font-bold color-dorado-main mb-4">Recompensas y Compras (Tienda/Bonos)</h2>
