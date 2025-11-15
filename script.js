@@ -254,7 +254,8 @@ const AppData = {
         if (AppState.selectedGrupo) {
             const grupoActualizado = activeGroups.find(g => g.nombre === AppState.selectedGrupo);
             if (grupoActualizado) {
-                AppUI.mostrarDatosGrupo(grupoActualizado);
+                // PROBLEMA 1 (SOLUCIÓN): Se usa 'grupoActualizado' como parámetro aquí.
+                AppUI.mostrarDatosGrupo(grupoActualizado); 
             } else {
                 AppState.selectedGrupo = null;
                 AppUI.mostrarPantallaNeutral(activeGroups);
@@ -939,7 +940,7 @@ const AppUI = {
     // --- FUNCIONES DE BONOS (FLUJO DE 2 PASOS) ---
     
     showBonoModal: function() {
-        // AJUSTE 1: Eliminamos el chequeo de AppState.datosActuales para no bloquear el modal si está cargando.
+        // PROBLEMA 3 (SOLUCIÓN): Ya no hay un 'if (!AppState.datosActuales) return;' aquí.
         AppUI.showBonoStep1();
         AppUI.showModal('bonos-modal');
 
@@ -1020,6 +1021,7 @@ const AppUI = {
             const usosRestantes = bono.usos_totales - bono.usos_actuales;
             
             const isCanjeado = AppState.bonos.canjeados.includes(bono.clave);
+            // PROBLEMA 2 (CORRECCIÓN): Reducción de relleno de p-2 a p-1.
             const cardClass = isCanjeado ? 'bg-slate-50 shadow-inner border-slate-200 opacity-60' : 'bg-white shadow-md border-slate-200';
             
             const badge = isCanjeado ? 
@@ -1029,13 +1031,16 @@ const AppUI = {
             const claveEscapada = escapeHTML(bono.clave);
 
             return `
-                <div class="rounded-lg shadow-sm p-2 border transition-all ${cardClass}">
-                    <div class="flex justify-between items-center mb-1">
+                <!-- PROBLEMA 2 (CORRECCIÓN): Reducción de relleno de p-2 a p-1 -->
+                <div class="rounded-lg shadow-sm p-1 border transition-all ${cardClass}">
+                    <!-- PROBLEMA 2 (CORRECCIÓN): Se eliminan mb-1 y mt-1 -->
+                    <div class="flex justify-between items-center"> 
                         <span class="text-sm font-medium text-slate-500 truncate">${bono.clave}</span>
                         ${badge}
                     </div>
                     <p class="text-base font-semibold text-slate-900 truncate">${bono.nombre}</p>
-                    <div class="flex justify-between items-baseline mt-1">
+                    <!-- PROBLEMA 2 (CORRECCIÓN): Se elimina mt-1 -->
+                    <div class="flex justify-between items-baseline">
                         <span class="text-xs text-slate-500">Quedan ${usosRestantes}</span>
                         <div class="flex items-center space-x-3">
                             <span class="text-xl font-bold color-dorado-main">${recompensa} ℙ</span>
@@ -1126,9 +1131,9 @@ const AppUI = {
     
     // --- FUNCIONES DE TIENDA ---
 
-    // CORRECCIÓN 1.1: Se elimina la restricción inicial para abrir el modal (Fix Botón Tienda)
+    // PROBLEMA 3 (SOLUCIÓN): Se elimina la restricción inicial para abrir el modal, se abre siempre.
     showTiendaModal: function() {
-        AppUI.showModal('tienda-modal'); // Abrir modal siempre
+        AppUI.showModal('tienda-modal'); 
         AppUI.showTiendaStep1();
         
         const container = document.getElementById('tienda-items-container');
@@ -1236,8 +1241,10 @@ const AppUI = {
             const stockText = item.stock === 9999 ? 'Ilimitado' : `Stock: ${item.stock}`;
 
             return `
-                <div class="rounded-lg shadow-sm p-2 border transition-all ${cardClass}">
-                    <div class="flex justify-between items-center mb-1">
+                <!-- PROBLEMA 2 (CORRECCIÓN): Reducción de relleno de p-2 a p-1 -->
+                <div class="rounded-lg shadow-sm p-1 border transition-all ${cardClass}">
+                    <!-- PROBLEMA 2 (CORRECCIÓN): Se eliminan mb-1 y mt-1 -->
+                    <div class="flex justify-between items-center">
                         <span class="text-xs font-medium text-slate-500 truncate">${item.Tipo} | ${stockText}</span>
                         <span class="text-xs font-bold bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">DISPONIBLE</span>
                     </div>
@@ -1247,7 +1254,8 @@ const AppUI = {
                             <div class="tooltip-text hidden md:block w-48">${item.descripcion}</div>
                         </span>
                     </p>
-                    <div class="flex justify-between items-baseline mt-1">
+                    <!-- PROBLEMA 2 (CORRECCIÓN): Se elimina mt-1 -->
+                    <div class="flex justify-between items-baseline">
                         <span class="text-xs text-slate-500">Base: ${AppFormat.formatNumber(item.precio)} ℙ (+ITBIS)</span>
                         
                         <div class="flex items-center space-x-3">
@@ -1835,7 +1843,10 @@ const AppUI = {
         
     },
 
-    mostrarDatosGrupo: function(grupos) {
+    mostrarDatosGrupo: function(grupo) {
+        // CORRECCIÓN PROBLEMA 1 (SOLUCIÓN): El parámetro ahora es 'grupo'
+        // Esto soluciona el problema de que la barra lateral no navegaba.
+
         // CORRECCIÓN 2: Mostrar el subtítulo cuando se ven los datos de un grupo
         document.getElementById('page-subtitle').classList.remove('hidden');
 
@@ -2405,6 +2416,15 @@ const AppTransacciones = {
 
         if (!bono) {
             AppTransacciones.setError(statusMsg, "Error interno: Bono no encontrado.");
+            // Restaurar el botón al estado por defecto:
+            setTimeout(() => {
+                if (clickedBtn) {
+                    clickedBtn.textContent = "Canjear";
+                    clickedBtn.classList.remove('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+                    clickedBtn.classList.add('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+                    clickedBtn.disabled = false;
+                }
+            }, 50); 
             return;
         }
 
