@@ -234,7 +234,7 @@
                         <!-- El track contiene todos los slides y maneja el deslizamiento horizontal -->
                         <div id="hero-carousel" class="w-full h-full relative hero-carousel-track">
                             
-                            <!-- SLIDE 0 (HOME): PROPÓSITO GENERAL Y LEMA (AJUSTE DE USUARIO: Layout Izquierda/Derecha) -->
+                            <!-- SLIDE 0 (HOME): PROPÓSITO GENERAL Y LEMA (FONDO DORADO) -->
                             <div class="hero-slide bg-slide-main text-white p-6 md:p-8 flex">
                                 <!-- FIX 1: Contenido con altura fija para evitar saltos de pantalla -->
                                 <div class="hero-slide-content w-full flex flex-col justify-between">
@@ -267,8 +267,8 @@
                                 </div>
                             </div>
                             
-                            <!-- SLIDE 1: DETALLES TRANSFERENCIAS -->
-                            <div class="hero-slide bg-slate-50 p-6 md:p-8 flex flex-col">
+                            <!-- SLIDE 1: DETALLES TRANSFERENCIAS (FONDO BLANCO) -->
+                            <div class="hero-slide bg-white p-6 md:p-8 flex flex-col">
                                 <div class="hero-slide-content w-full">
                                     <div>
                                         <h2 class="text-2xl font-bold color-dorado-main mb-4">Portal de Transferencias (P2P)</h2>
@@ -299,8 +299,8 @@
                                 </div>
                             </div>
 
-                            <!-- SLIDE 2: DETALLES PRÉSTAMOS -->
-                            <div class="hero-slide bg-slate-50 p-6 md:p-8 flex flex-col">
+                            <!-- SLIDE 2: DETALLES PRÉSTAMOS (FONDO BLANCO) -->
+                            <div class="hero-slide bg-white p-6 md:p-8 flex flex-col">
                                 <div class="hero-slide-content w-full">
                                     <div>
                                         <h2 class="text-2xl font-bold color-dorado-main mb-4">Préstamos Flexibles (Banca Activa)</h2>
@@ -334,8 +334,8 @@
                                 </div>
                             </div>
 
-                            <!-- SLIDE 3: DETALLES DEPÓSITOS -->
-                            <div class="hero-slide bg-slate-50 p-6 md:p-8 flex flex-col">
+                            <!-- SLIDE 3: DETALLES DEPÓSITOS (FONDO BLANCO) -->
+                            <div class="hero-slide bg-white p-6 md:p-8 flex flex-col">
                                 <div class="hero-slide-content w-full">
                                     <div>
                                         <h2 class="text-2xl font-bold color-dorado-main mb-4">Depósitos a Plazo (Inversión Pasiva)</h2>
@@ -368,13 +368,14 @@
                                 </div>
                             </div>
                             
-                            <!-- SLIDE 4: IMPUESTOS Y COMISIONES (NUEVO) -->
-                            <div class="hero-slide bg-slate-50 p-6 md:p-8 flex flex-col">
+                            <!-- SLIDE 4: IMPUESTOS Y COMISIONES (FONDO BLANCO) -->
+                            <div class="hero-slide bg-white p-6 md:p-8 flex flex-col">
                                 <div class="hero-slide-content w-full">
                                     <div>
                                         <h2 class="text-2xl font-bold color-dorado-main mb-4">Impuestos y Comisiones (Regulación)</h2>
-                                        <!-- INICIO CORRECCIÓN PROPÓSITO IMPUESTOS -->
+                                        <!-- AJUSTE USUARIO: Color de texto unificado (text-slate-800) -->
                                         <div id="slide-impuestos-content" class="space-y-4 text-slate-800">
+                                            <!-- INICIO CORRECCIÓN PROPÓSITO IMPUESTOS -->
                                             <p><strong>Propósito:</strong> Mantener la Tesorería saludable y regular la economía interna mediante una carga tributaria.</p>
                                             <!-- FIN CORRECCIÓN PROPÓSITO IMPUESTOS -->
                                             <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
@@ -401,8 +402,8 @@
                                 </div>
                             </div>
 
-                            <!-- SLIDE 5: BONOS Y TIENDA (NUEVO) -->
-                            <div class="hero-slide bg-slate-50 p-6 md:p-8 flex flex-col">
+                            <!-- SLIDE 5: BONOS Y TIENDA (FONDO BLANCO) -->
+                            <div class="hero-slide bg-white p-6 md:p-8 flex flex-col">
                                 <div class="hero-slide-content w-full">
                                     <div>
                                         <h2 class="text-2xl font-bold color-dorado-main mb-4">Recompensas y Compras (Tienda/Bonos)</h2>
@@ -965,8 +966,8 @@
             
             <div id="bono-step-list-container" class="p-6 modal-content-fixed-height">
                 <h3 class="text-lg font-semibold color-dorado-main mb-4">Bonos Disponibles</h3>
-                <!-- Se reduce el espacio para que quepan más en la vista sin scroll -->
-                <div id="bonos-lista-disponible" class="grid grid-cols-1 md:grid-cols-3 gap-3 pr-2 overflow-y-auto h-[460px]">
+                <!-- ACCIÓN 2B: Se reduce el gap entre tarjetas a gap-2 -->
+                <div id="bonos-lista-disponible" class="grid grid-cols-1 md:grid-cols-3 gap-2 pr-2 overflow-y-auto h-[460px]">
                     <p class="text-sm text-slate-500 text-center col-span-3">Cargando bonos...</p>
                 </div>
             </div>
@@ -1022,8 +1023,8 @@
             
             <div id="tienda-step-list-container" class="p-6 space-y-4 modal-content-fixed-height">
                 <h3 class="text-lg font-semibold color-dorado-main mb-4">Artículos Disponibles</h3>
-                <!-- Se mantiene el scroll interno en la lista de items para manejar muchos productos -->
-                <div id="tienda-items-container" class="grid grid-cols-1 lg:grid-cols-3 gap-3 pr-2 bg-white p-4 rounded-lg border border-slate-200 shadow-inner overflow-y-auto h-[460px]">
+                <!-- ACCIÓN 2B: Se reduce el gap entre tarjetas a gap-2 -->
+                <div id="tienda-items-container" class="grid grid-cols-1 lg:grid-cols-3 gap-2 pr-2 bg-white p-4 rounded-lg border border-slate-200 shadow-inner overflow-y-auto h-[460px]">
                     <p class="text-sm text-slate-500 text-center col-span-3">Cargando artículos...</p>
                 </div>
             </div>
