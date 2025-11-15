@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BPD v29.4 - HERO COMPACTO, 6 SLIDES, CONTENIDOS LEGALES REVISADOS, CONTADOR OSCURO -->
+<!-- BPD v29.5 - FIX: HERO COMPACTO, FLUJO, BOTONES LARGOS Y CONTADOR GRIS CLARO -->
 <html lang="es" class="h-full bg-slate-50 overflow-hidden">
 <head>
     <meta charset="UTF-8">
@@ -64,11 +64,19 @@
             display: flex; /* Necesario para la animación de deslizamiento */
             transition: transform 0.5s ease-in-out;
             height: 100%; /* Asegura que la pista ocupe la altura del contenedor */
-            /* CAMBIO: REDUCCIÓN DE ALTURA PARA EVITAR SCROLL */
-            min-height: 220px; 
+            /* FIX 1: ALTURA MÁS COMPACTA Y CONSISTENTE */
+            min-height: 250px; 
         }
         .hero-carousel-container {
             overflow: hidden; /* Oculta los slides fuera de vista */
+        }
+        /* FIX 2: Contenedor interno que garantiza altura para evitar el salto vertical */
+        .hero-slide-content {
+            height: 100%;
+            min-height: 230px; /* Base para evitar el CLS */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .hero-slide {
             flex-shrink: 0; /* Evita que los slides se contraigan */
@@ -90,10 +98,11 @@
             background-image: linear-gradient(to right, #f59e0b, #d97706);
         }
         
-        /* Homogeneización de botones de navegación del Hero */
+        /* FIX 3: Homogeneización de botones de navegación del Hero */
         .hero-nav-btn {
-            width: 12rem; /* w-48 o un ancho fijo para todos los botones */
+            width: 9rem; /* 144px de ancho para botones amplios */
             height: 40px; 
+            min-width: 120px;
         }
         
     </style>
@@ -189,8 +198,8 @@
                         <div class="flex flex-col justify-between gap-4 px-3 bg-white rounded-xl shadow-lg shadow-dorado-soft/10 border border-amber-200 p-4 h-full">
                             <!-- Timer (ACTUALIZADO: Horizontal, Oscuro y Mismo Tamaño que Números) -->
                             <div id="countdown-timer" class="flex-shrink-0 text-sm font-medium text-slate-700 flex items-baseline justify-center gap-2">
-                                <!-- AJUSTE: Color del texto a oscuro (text-slate-800) -->
-                                <span class="text-xl font-bold text-slate-800">La tienda abre en:</span>
+                                <!-- FIX 4: Color del texto a gris oscuro más claro (text-slate-600) -->
+                                <span class="text-xl font-bold text-slate-600">La tienda abre en:</span>
                                 <span id="days" class="text-xl font-bold color-dorado-main text-right">00</span><span class="text-xs text-slate-500 uppercase -ml-1">Días</span>
                                 <span id="hours" class="text-xl font-bold color-dorado-main text-right">00</span><span class="text-xs text-slate-500 uppercase -ml-1">Horas</span>
                                 <span id="minutes" class="text-xl font-bold color-dorado-main text-right">00</span><span class="text-xs text-slate-500 uppercase -ml-1">Minutos</span>
@@ -226,49 +235,53 @@
                             
                             <!-- SLIDE 0 (HOME): PROPÓSITO GENERAL Y LEMA -->
                             <div class="hero-slide bg-slide-main text-white p-6 md:p-8 flex flex-col justify-center items-center">
-                                <!-- Zona Central: Datos Clave y Propósito -->
-                                <div class="w-full text-center max-w-4xl">
-                                    <p class="text-lg font-semibold opacity-90 mb-1">
-                                        <!-- FRASE ELIMINADA: "Fomentando la educación financiera y el éxito académico." -->
-                                    </p>
-                                    <h2 class="text-4xl md:text-5xl font-extrabold mb-3">
-                                        Banco del Pincel Dorado
-                                    </h2>
-                                    <p class="text-xl md:text-2xl opacity-90 mb-4">
-                                        "Donde el esfuerzo académico tiene su recompensa"
-                                    </p>
-                                    <ul class="space-y-1 text-sm md:text-lg font-medium opacity-90 list-disc list-inside text-left mx-auto max-w-sm">
-                                        <li>Gestiona tu liquidez (Préstamos y Depósitos).</li>
-                                        <li>Transfiere valor y paga servicios entre compañeros.</li>
-                                        <li>Canjea recompensas por logros y buen comportamiento.</li>
-                                    </ul>
-                                </div>
-                                
-                                <!-- Botón CTA para saltar al siguiente slide (Transferencias) -->
-                                <div class="w-full mt-6 flex justify-center">
-                                     <button id="hero-slide-0-next" 
-                                            onclick="AppUI.goToHeroSlide(1)"
-                                            class="hero-nav-btn px-8 py-2 text-sm font-bold rounded-lg bg-transparent border-2 border-white text-white hover:bg-white/20 shadow-xl transition-all min-w-[180px]">
-                                        Explorar Servicios
-                                    </button>
+                                <!-- FIX 1: Contenido con altura fija para evitar saltos de pantalla -->
+                                <div class="hero-slide-content w-full text-center max-w-4xl flex justify-center flex-col items-center">
+                                    <div>
+                                        <p class="text-lg font-semibold opacity-90 mb-1">
+                                            Educación Financiera y Cívica Académica.
+                                        </p>
+                                        <h2 class="text-4xl md:text-5xl font-extrabold mb-3">
+                                            Banco del Pincel Dorado
+                                        </h2>
+                                        <p class="text-xl md:text-2xl opacity-90 mb-4">
+                                            "Donde el esfuerzo académico tiene su recompensa"
+                                        </p>
+                                        <ul class="space-y-1 text-sm md:text-lg font-medium opacity-90 list-disc list-inside text-left mx-auto max-w-sm">
+                                            <li>Gestiona tu liquidez (Préstamos y Depósitos).</li>
+                                            <li>Transfiere valor y paga servicios entre compañeros.</li>
+                                            <li>Canjea recompensas por logros y buen comportamiento.</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <!-- Botón CTA para saltar al siguiente slide (Transferencias) -->
+                                    <div class="w-full mt-6 flex justify-center">
+                                        <button id="hero-slide-0-next" 
+                                                onclick="AppUI.goToHeroSlide(1)"
+                                                class="hero-nav-btn px-8 py-2 text-sm font-bold rounded-lg bg-transparent border-2 border-white text-white hover:bg-white/20 shadow-xl transition-all">
+                                            Explorar Servicios
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             
                             <!-- SLIDE 1: DETALLES TRANSFERENCIAS -->
                             <div class="hero-slide bg-slate-50 text-slate-800 p-6 md:p-8 flex flex-col">
-                                <div class="w-full">
-                                    <h2 class="text-2xl font-bold color-dorado-main mb-4">Portal de Transferencias (P2P)</h2>
-                                    <div id="slide-p2p-content" class="space-y-4 text-slate-700">
-                                        <p><strong>Propósito:</strong> Fomentar la microeconomía y la gestión de pagos internos. Permite el intercambio de valor (ℙ) entre cuentas de estudiantes de forma rápida.</p>
-                                        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-                                            <li><span class="font-bold">Irrevocabilidad:</span> Toda Transferencia confirmada es definitiva e irreversible.</li>
-                                            <li><span class="font-bold">Costo Operacional:</span> Se aplica una comisión baja del **1.0%** sobre el monto enviado.</li>
-                                            <li><span class="font-bold">Seguridad:</span> Requiere la Clave P2P personal para la autorización.</li>
-                                        </ul>
-                                        <p class="text-xs text-slate-500 italic mt-3">Consejo: Use las transferencias para liquidar deudas o hacer pagos por servicios menores entre compañeros.</p>
+                                <div class="hero-slide-content w-full">
+                                    <div>
+                                        <h2 class="text-2xl font-bold color-dorado-main mb-4">Portal de Transferencias (P2P)</h2>
+                                        <div id="slide-p2p-content" class="space-y-4 text-slate-700">
+                                            <p><strong>Propósito:</strong> Fomentar la microeconomía y la gestión de pagos internos. Permite el intercambio de valor (ℙ) entre cuentas de estudiantes de forma rápida.</p>
+                                            <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+                                                <li><span class="font-bold">Irrevocabilidad:</span> Toda Transferencia confirmada es definitiva e irreversible.</li>
+                                                <li><span class="font-bold">Costo Operacional:</span> Se aplica una comisión baja del **1.0%** sobre el monto enviado.</li>
+                                                <li><span class="font-bold">Seguridad:</span> Requiere la Clave P2P personal para la autorización.</li>
+                                            </ul>
+                                            <p class="text-xs text-slate-500 italic mt-3">Consejo: Use las transferencias para liquidar deudas o hacer pagos por servicios menores entre compañeros.</p>
+                                        </div>
                                     </div>
                                     <!-- AJUSTE: Botones con clase hero-nav-btn para tamaño consistente -->
-                                    <div class="flex justify-between mt-6">
+                                    <div class="flex justify-between mt-6 flex-shrink-0">
                                         <!-- Left Button (Atrás) - Estilo Gris -->
                                         <button onclick="AppUI.goToHeroSlide(0)" class="hero-nav-btn flex-shrink-0 text-sm font-medium rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
                                             &#8249; Inicio
@@ -283,20 +296,22 @@
 
                             <!-- SLIDE 2: DETALLES PRÉSTAMOS -->
                             <div class="hero-slide bg-slate-50 text-slate-800 p-6 md:p-8 flex flex-col">
-                                <div class="w-full">
-                                    <h2 class="text-2xl font-bold color-dorado-main mb-4">Préstamos Flexibles (Banca Activa)</h2>
-                                    <div id="slide-prestamos-content" class="space-y-4 text-slate-700">
-                                        <p><strong>Propósito:</strong> Ofrecer liquidez a corto plazo para que los estudiantes puedan financiar proyectos o cubrir necesidades imprevistas.</p>
-                                        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-                                            <li><span class="font-bold">Montos:</span> Desde 10,000 ℙ hasta 150,000 ℙ.</li>
-                                            <li><span class="font-bold">Plazos:</span> De 3 a 21 días (ajustables).</li>
-                                            <li><span class="font-bold">Tasa:</span> Interés competitivo basado en tasas activas reales (aprox. 1.5% mensual base).</li>
-                                            <li><span class="font-bold">Elegibilidad:</span> Requiere saldo positivo y una capacidad de pago suficiente (monto no debe exceder el 50% del saldo actual).</li>
-                                        </ul>
-                                        <p class="text-xs text-slate-500 italic mt-3">Consejo: Si no paga la cuota diaria, el préstamo acumulará una mora realista sobre el saldo pendiente.</p>
+                                <div class="hero-slide-content w-full">
+                                    <div>
+                                        <h2 class="text-2xl font-bold color-dorado-main mb-4">Préstamos Flexibles (Banca Activa)</h2>
+                                        <div id="slide-prestamos-content" class="space-y-4 text-slate-700">
+                                            <p><strong>Propósito:</strong> Ofrecer liquidez a corto plazo para que los estudiantes puedan financiar proyectos o cubrir necesidades imprevistas.</p>
+                                            <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+                                                <li><span class="font-bold">Montos:</span> Desde 10,000 ℙ hasta 150,000 ℙ.</li>
+                                                <li><span class="font-bold">Plazos:</span> De 3 a 21 días (ajustables).</li>
+                                                <li><span class="font-bold">Tasa:</span> Interés competitivo basado en tasas activas reales (aprox. 1.5% mensual base).</li>
+                                                <li><span class="font-bold">Elegibilidad:</span> Requiere saldo positivo y una capacidad de pago suficiente (monto no debe exceder el 50% del saldo actual).</li>
+                                            </ul>
+                                            <p class="text-xs text-slate-500 italic mt-3">Consejo: Si no paga la cuota diaria, el préstamo acumulará una mora realista sobre el saldo pendiente.</p>
+                                        </div>
                                     </div>
                                     <!-- AJUSTE: Botones con clase hero-nav-btn para tamaño consistente -->
-                                    <div class="flex justify-between mt-6">
+                                    <div class="flex justify-between mt-6 flex-shrink-0">
                                         <!-- Left Button (Atrás) - Estilo Gris -->
                                         <button onclick="AppUI.goToHeroSlide(1)" class="hero-nav-btn flex-shrink-0 text-sm font-medium rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
                                             &#8249; Transferencias
@@ -311,20 +326,22 @@
 
                             <!-- SLIDE 3: DETALLES DEPÓSITOS -->
                             <div class="hero-slide bg-slate-50 text-slate-800 p-6 md:p-8 flex flex-col">
-                                <div class="w-full">
-                                    <h2 class="text-2xl font-bold color-dorado-main mb-4">Depósitos a Plazo (Inversión Pasiva)</h2>
-                                    <div id="slide-depositos-content" class="space-y-4 text-slate-700">
-                                        <p><strong>Propósito:</strong> Incentivar el ahorro y la planificación financiera a medio plazo, generando rendimientos pasivos sobre el capital.</p>
-                                        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-                                            <li><span class="font-bold">Monto Mínimo:</span> 50,000 ℙ.</li>
-                                            <li><span class="font-bold">Plazos:</span> De 7 a 30 días (ajustables).</li>
-                                            <li><span class="font-bold">Tasa:</span> Interés competitivo basado en tasas pasivas reales (aprox. 0.72% mensual base).</li>
-                                            <li><span class="font-bold">Condición:</span> Los fondos permanecen congelados hasta el vencimiento. No se puede invertir con un préstamo activo.</li>
-                                        </ul>
-                                        <p class="text-xs text-slate-500 italic mt-3">Consejo: Si quieres que tu capital trabaje para ti, un depósito a plazo es la mejor opción de bajo riesgo.</p>
+                                <div class="hero-slide-content w-full">
+                                    <div>
+                                        <h2 class="text-2xl font-bold color-dorado-main mb-4">Depósitos a Plazo (Inversión Pasiva)</h2>
+                                        <div id="slide-depositos-content" class="space-y-4 text-slate-700">
+                                            <p><strong>Propósito:</strong> Incentivar el ahorro y la planificación financiera a medio plazo, generando rendimientos pasivos sobre el capital.</p>
+                                            <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+                                                <li><span class="font-bold">Monto Mínimo:</span> 50,000 ℙ.</li>
+                                                <li><span class="font-bold">Plazos:</span> De 7 a 30 días (ajustables).</li>
+                                                <li><span class="font-bold">Tasa:</span> Interés competitivo basado en tasas pasivas reales (aprox. 0.72% mensual base).</li>
+                                                <li><span class="font-bold">Condición:</span> Los fondos permanecen congelados hasta el vencimiento. No se puede invertir con un préstamo activo.</li>
+                                            </ul>
+                                            <p class="text-xs text-slate-500 italic mt-3">Consejo: Si quieres que tu capital trabaje para ti, un depósito a plazo es la mejor opción de bajo riesgo.</p>
+                                        </div>
                                     </div>
                                     <!-- AJUSTE: Botones con clase hero-nav-btn para tamaño consistente -->
-                                    <div class="flex justify-between mt-6">
+                                    <div class="flex justify-between mt-6 flex-shrink-0">
                                         <!-- Left Button (Atrás) - Estilo Gris -->
                                         <button onclick="AppUI.goToHeroSlide(2)" class="hero-nav-btn flex-shrink-0 text-sm font-medium rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
                                             &#8249; Préstamos
@@ -339,19 +356,21 @@
                             
                             <!-- SLIDE 4: IMPUESTOS Y COMISIONES (NUEVO) -->
                             <div class="hero-slide bg-slate-50 text-slate-800 p-6 md:p-8 flex flex-col">
-                                <div class="w-full">
-                                    <h2 class="text-2xl font-bold color-dorado-main mb-4">Impuestos y Comisiones (Regulación)</h2>
-                                    <div id="slide-impuestos-content" class="space-y-4 text-slate-700">
-                                        <p><strong>Propósito:</strong> Mantener la Tesorería saludable y la economía regulada, simulando la carga tributaria del mundo real.</p>
-                                        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-                                            <li><span class="font-bold">ITBIS (Tienda):</span> **18.0%** aplicado a todas las compras de artículos.</li>
-                                            <li><span class="font-bold">Comisión P2P:</span> **1.0%** de comisión sobre el monto enviado por cada transferencia.</li>
-                                            <li><span class="font-bold">ISP (Riqueza):</span> Impuesto Progresivo diario sobre saldos mayores a **100,000 ℙ**.</li>
-                                        </ul>
-                                        <p class="text-xs text-slate-500 italic mt-3">Consejo: Si tienes mucho capital, invierte o gástalo antes de que el ISP comience a aplicarse.</p>
+                                <div class="hero-slide-content w-full">
+                                    <div>
+                                        <h2 class="text-2xl font-bold color-dorado-main mb-4">Impuestos y Comisiones (Regulación)</h2>
+                                        <div id="slide-impuestos-content" class="space-y-4 text-slate-700">
+                                            <p><strong>Propósito:</strong> Mantener la Tesorería saludable y la economía regulada, simulando la carga tributaria del mundo real.</p>
+                                            <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+                                                <li><span class="font-bold">ITBIS (Tienda):</span> **18.0%** aplicado a todas las compras de artículos.</li>
+                                                <li><span class="font-bold">Comisión P2P:</span> **1.0%** de comisión sobre el monto enviado por cada transferencia.</li>
+                                                <li><span class="font-bold">ISP (Riqueza):</span> Impuesto Progresivo diario sobre saldos mayores a **100,000 ℙ**.</li>
+                                            </ul>
+                                            <p class="text-xs text-slate-500 italic mt-3">Consejo: Si tienes mucho capital, invierte o gástalo antes de que el ISP comience a aplicarse.</p>
+                                        </div>
                                     </div>
                                     <!-- AJUSTE: Botones con clase hero-nav-btn para tamaño consistente -->
-                                    <div class="flex justify-between mt-6">
+                                    <div class="flex justify-between mt-6 flex-shrink-0">
                                         <!-- Left Button (Atrás) - Estilo Gris -->
                                         <button onclick="AppUI.goToHeroSlide(3)" class="hero-nav-btn flex-shrink-0 text-sm font-medium rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
                                             &#8249; Depósitos
@@ -366,18 +385,20 @@
 
                             <!-- SLIDE 5: BONOS Y TIENDA (NUEVO) -->
                             <div class="hero-slide bg-slate-50 text-slate-800 p-6 md:p-8 flex flex-col">
-                                <div class="w-full">
-                                    <h2 class="text-2xl font-bold color-dorado-main mb-4">Recompensas y Compras (Tienda/Bonos)</h2>
-                                    <div id="slide-bonos-tienda-content" class="space-y-4 text-slate-700">
-                                        <p><strong>Propósito:</strong> Recompensar el mérito y proporcionar un destino final para el capital ganado a través del esfuerzo académico.</p>
-                                        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-                                            <li><span class="font-bold">Bonos:</span> Códigos de canje por logros o tareas de recuperación (**Salida Autónoma de Cicla**). Son gratuitos.</li>
-                                            <li><span class="font-bold">Tienda:</span> Artículos de privilegio o mejoras de estatus que se compran con Pinceles (+ 18% ITBIS).</li>
-                                            <li><span class="font-bold">Consejo:</span> La Tienda tiene stock limitado y abre por tiempo limitado. ¡Prepárate!</li>
-                                        </ul>
+                                <div class="hero-slide-content w-full">
+                                    <div>
+                                        <h2 class="text-2xl font-bold color-dorado-main mb-4">Recompensas y Compras (Tienda/Bonos)</h2>
+                                        <div id="slide-bonos-tienda-content" class="space-y-4 text-slate-700">
+                                            <p><strong>Propósito:</strong> Recompensar el mérito y proporcionar un destino final para el capital ganado a través del esfuerzo académico.</p>
+                                            <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
+                                                <li><span class="font-bold">Bonos:</span> Códigos de canje por logros o tareas de recuperación (**Salida Autónoma de Cicla**). Son gratuitos.</li>
+                                                <li><span class="font-bold">Tienda:</span> Artículos de privilegio o mejoras de estatus que se compran con Pinceles (+ 18% ITBIS).</li>
+                                                <li><span class="font-bold">Consejo:</span> La Tienda tiene stock limitado y abre por tiempo limitado. ¡Prepárate!</li>
+                                            </ul>
+                                        </div>
                                     </div>
                                     <!-- AJUSTE: Botones con clase hero-nav-btn para tamaño consistente -->
-                                    <div class="flex justify-between mt-6">
+                                    <div class="flex justify-between mt-6 flex-shrink-0">
                                         <!-- Left Button (Atrás) - Estilo Gris -->
                                         <button onclick="AppUI.goToHeroSlide(4)" class="hero-nav-btn flex-shrink-0 text-sm font-medium rounded-lg bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors">
                                             &#8249; Impuestos
@@ -392,8 +413,7 @@
 
                         </div>
 
-                        <!-- AJUSTE: REMOVER INDICADORES DE SLIDE (DOTS) -->
-                        <!-- La sección de dots ha sido eliminada por solicitud. -->
+                        <!-- Dots eliminados -->
                         
                     </div>
                 </div>
@@ -430,7 +450,6 @@
 
     <!-- Modal de Acceso (Clave) - Sin cambios -->
     <div id="gestion-modal" class="fixed inset-0 bg-slate-900/75 flex items-center justify-center z-[1001] p-4 opacity-0 pointer-events-none transition-opacity duration-300">
-        <!-- Contenido del modal (sin cambios) -->
         <div class="bg-white rounded-lg shadow-xl w-full max-w-md transform scale-95 transition-transform duration-300 border-2 border-amber-600">
             <div class="p-6 relative">
                 <h2 class="text-lg font-semibold color-dorado-main text-center mb-4 pr-8">Acceso a Administración</h2>
