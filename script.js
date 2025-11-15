@@ -2405,10 +2405,7 @@ const AppTransacciones = {
 
         if (!bono) {
             AppTransacciones.setError(statusMsg, "Error interno: Bono no encontrado.");
-            return;
-        }
-
-        if (bono.usos_actuales >= bono.usos_totales) {
+        } else if (bono.usos_actuales >= bono.usos_totales) {
              AppTransacciones.setError(statusMsg, "Bono agotado, intente más tarde.");
         } else if (bono.expiracion_fecha && new Date(bono.expiracion_fecha).getTime() < Date.now()) {
              AppTransacciones.setError(statusMsg, "Este bono ha expirado.");
@@ -2421,8 +2418,9 @@ const AppTransacciones = {
             if (clickedBtn) {
                 clickedBtn.textContent = "Canjear";
                 clickedBtn.classList.remove('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
-                // Solo restablecer si no está agotado o expirado
-                if (bono.usos_actuales < bono.usos_totales && (!bono.expiracion_fecha || new Date(bono.expiracion_fecha).getTime() >= Date.now())) {
+                // Solo restablecer si no está agotado o expirado (la lógica de estado ya lo maneja)
+                const isAvailable = bono && bono.usos_actuales < bono.usos_totales && (!bono.expiracion_fecha || new Date(bono.expiracion_fecha).getTime() >= Date.now());
+                if (isAvailable) {
                     clickedBtn.classList.add('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
                     clickedBtn.disabled = false;
                 }
@@ -2510,31 +2508,37 @@ const AppTransacciones = {
         const statusMsg = document.getElementById('bono-admin-status-msg');
         const submitBtn = document.getElementById('bono-admin-submit-btn');
         
-        const clave = document.getElementById('bono-admin-clave-input').value.toUpperCase();
-        const nombre = document.getElementById('bono-admin-nombre-input').value;
-        const recompensa = parseInt(document.getElementById('bono-admin-recompensa-input').value, 10);
-        const usos_totales = parseInt(document.getElementById('bono-admin-usos-input').value, 10);
-        
         const duracionHoras = parseInt(document.getElementById('bono-admin-expiracion-input').value, 10);
         
         const checkedGroups = AppUI.getAdminGroupCheckboxSelection('bono-admin-grupos-checkboxes-container');
         const grupos_permitidos = checkedGroups.join(', ');
-        
+
         let expiracion_fecha = '';
         if (!isNaN(duracionHoras) && duracionHoras > 0) {
             const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
             expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
         }
 
+        const item = {
+            ItemID: document.getElementById('tienda-admin-itemid-input').value.trim(),
+            Nombre: document.getElementById('tienda-admin-nombre-input').value.trim(),
+            Descripcion: document.getElementById('tienda-admin-desc-input').value.trim(),
+            Tipo: document.getElementById('tienda-admin-tipo-input').value.trim(),
+            PrecioBase: parseInt(document.getElementById('tienda-admin-precio-input').value, 10),
+            Stock: parseInt(document.getElementById('tienda-admin-stock-input').value, 10),
+            GruposPermitidos: grupos_permitidos, 
+            ExpiracionFecha: expiracion_fecha 
+        };
+        
         let errorValidacion = "";
-        if (!clave) {
-            errorValidacion = "La 'Clave' es obligatoria.";
-        } else if (!nombre) {
+        if (!item.ItemID) {
+            errorValidacion = "El 'ItemID' es obligatorio.";
+        } else if (!item.Nombre) {
             errorValidacion = "El 'Nombre' es obligatorio.";
-        } else if (isNaN(recompensa) || recompensa <= 0) {
-            errorValidacion = "La 'Recompensa' debe ser un número positivo.";
-        } else if (isNaN(usos_totales) || usos_totales < 0) {
-            errorValidacion = "Los 'Usos Totales' deben ser un número (0 o más).";
+        } else if (isNaN(item.PrecioBase) || item.PrecioBase <= 0) {
+            errorValidacion = "El 'Precio Base' debe ser un número positivo.";
+        } else if (isNaN(item.Stock) || item.Stock < 0) {
+            errorValidacion = "El 'Stock' debe ser un número (0 o más).";
         }
         
         if (errorValidacion) {
@@ -2543,23 +2547,16 @@ const AppTransacciones = {
         }
 
         AppTransacciones.setLoadingState(submitBtn, null, true, 'Guardando...');
-        AppTransacciones.setLoading(statusMsg, `Guardando bono ${clave}...`);
+        AppTransacciones.setLoading(statusMsg, `Guardando artículo ${item.ItemID}...`);
 
         try {
             const payload = {
-                accion: 'admin_crear_bono',
+                accion: 'admin_crear_item_tienda',
                 clave: AppConfig.CLAVE_MAESTRA,
-                bono: {
-                    clave: clave,
-                    nombre: nombre,
-                    recompensa: recompensa,
-                    usos_totales: usos_totales,
-                    grupos_permitidos: grupos_permitidos,
-                    expiracion_fecha: expiracion_fecha
-                }
+                item: item
             };
 
-            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.TRANSACCION_API_URL, {
                 method: 'POST',
                 body: JSON.stringify(payload),
             });
@@ -2567,19 +2564,19 @@ const AppTransacciones = {
             const result = await response.json();
 
             if (result.success === true) {
-                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono guardado con éxito!");
-                AppUI.clearBonoAdminForm();
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
+                AppUI.clearTiendaAdminForm();
                 await AppData.cargarDatos(false);
-                AppUI.populateBonoList(); 
+                AppUI.renderTiendaItems();
                 
             } else {
-                throw new Error(result.message || "Error al guardar el bono.");
+                throw new Error(result.message || "Error al guardar el artículo.");
             }
 
         } catch (error) {
             AppTransacciones.setError(statusMsg, error.message);
         } finally {
-            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar Bono');
+            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar');
         }
     },
     
@@ -2744,7 +2741,7 @@ const AppTransacciones = {
         let expiracion_fecha = '';
         if (!isNaN(duracionHoras) && duracionHoras > 0) {
             const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
-            expiracion_fecha = AppFormat.toLocalISOString(expiryDate);
+            expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
         }
 
         const item = {
@@ -2808,21 +2805,20 @@ const AppTransacciones = {
         }
     },
     
-    eliminarItem: async function(itemId) {
-        const statusMsg = document.getElementById('tienda-admin-status-msg'); 
-        AppTransacciones.setLoading(statusMsg, `Eliminando artículo ${itemId}...`);
+    eliminarBono: async function(claveBono) {
+        const statusMsg = document.getElementById('bono-admin-status-msg');
+        AppTransacciones.setLoading(statusMsg, `Eliminando bono ${claveBono}...`);
         
-        const row = document.getElementById(`tienda-item-row-${itemId}`);
-        if (row) row.querySelectorAll('button').forEach(btn => btn.disabled = true);
+        document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = true);
 
         try {
             const payload = {
-                accion: 'admin_eliminar_item_tienda',
+                accion: 'admin_eliminar_bono',
                 clave: AppConfig.CLAVE_MAESTRA,
-                itemId: itemId
+                claveBono: claveBono
             };
 
-            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.TRANSACCION_API_URL, {
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
                 method: 'POST',
                 body: JSON.stringify(payload),
             });
@@ -2830,36 +2826,109 @@ const AppTransacciones = {
             const result = await response.json();
 
             if (result.success === true) {
-                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo eliminado con éxito!");
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
                 await AppData.cargarDatos(false);
-                AppUI.renderTiendaItems();
+                AppUI.populateBonoList();
                 
             } else {
-                throw new Error(result.message || "Error al eliminar el artículo.");
+                throw new Error(result.message || "Error al eliminar el bono.");
             }
 
         } catch (error) {
             AppTransacciones.setError(statusMsg, error.message);
-            AppData.cargarDatos(false); 
+            document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false);
         } 
     },
-    
-    toggleStoreManual: async function(status) {
-        const statusMsg = document.getElementById('tienda-admin-status-msg'); 
-        AppTransacciones.setLoading(statusMsg, `Cambiando estado a: ${status}...`);
-        
-        document.getElementById('tienda-force-open-btn').disabled = true;
-        document.getElementById('tienda-force-close-btn').disabled = true;
-        document.getElementById('tienda-force-auto-btn').disabled = true;
 
+    // --- LÓGICA DE TIENDA (FLUJO DE 2 PASOS) ---
+    iniciarCompra: function(itemId) {
+        const item = AppState.tienda.items[itemId];
+        const statusMsg = document.getElementById('tienda-status-msg');
+        const buyBtn = document.getElementById(`buy-btn-${itemId}`);
+        
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
+        if (buyBtn) {
+            buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+            buyBtn.disabled = true;
+            buyBtn.querySelector('.btn-text').textContent = "Cargando...";
+        }
+        
+        statusMsg.textContent = "";
+
+        if (!item) {
+            AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
+        } else if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+            AppTransacciones.setError(statusMsg, "Este artículo ha expirado.");
+        } else {
+            AppUI.showTiendaStep2(itemId);
+        }
+        
+        // --- Corrección de Flujo: Restablecer el botón inmediatamente después de la validación ---
+        setTimeout(() => {
+             if (buyBtn) AppUI.updateTiendaButtonStates(); // Esta función restablece el estado si es necesario.
+        }, 50);
+    },
+
+    confirmarCompra: async function() {
+        const statusMsg = document.getElementById('tienda-step2-status-msg'); 
+        const submitBtn = document.getElementById('tienda-submit-step2-btn');
+        const btnText = document.getElementById('tienda-btn-text-step2');
+        
+        AppTransacciones.setLoadingState(submitBtn, btnText, true, 'Comprando...');
+
+        const itemId = AppState.tienda.selectedItem;
+        const alumnoNombre = document.getElementById('tienda-search-alumno-step2').value.trim();
+        const claveP2P = document.getElementById('tienda-clave-p2p-step2').value;
+
+        const item = AppState.tienda.items[itemId];
+        const student = AppState.datosAdicionales.allStudents.find(s => s.nombre === alumnoNombre);
+
+        let errorValidacion = "";
+        if (!itemId || !item) {
+            errorValidacion = "Error interno: Artículo no seleccionado.";
+        } else if (!alumnoNombre || !student) {
+            errorValidacion = "Alumno no encontrado. Por favor, seleccione su nombre de la lista.";
+        } else if (!claveP2P) {
+            errorValidacion = "Debe ingresar su Clave P2P.";
+        } else {
+            const costoFinal = Math.round(item.precio * (1 + AppConfig.TASA_ITBIS));
+            if (student.pinceles < costoFinal) {
+                errorValidacion = "Saldo insuficiente para completar la compra.";
+            } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+                errorValidacion = "El artículo está agotado.";
+            } else {
+                if (item.GruposPermitidos) {
+                    const allowedGroups = (item.GruposPermitidos || '').split(',').map(g => g.trim());
+                    if (!allowedGroups.includes(student.grupoNombre)) {
+                        errorValidacion = `Tu grupo (${student.grupoNombre}) no está autorizado para esta compra.`;
+                    }
+                }
+                if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+                    errorValidacion = "Este artículo ha expirado.";
+                }
+            }
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+            return;
+        }
+
+        AppTransacciones.setLoading(statusMsg, `Procesando compra de ${itemId}...`);
+        
         try {
             const payload = {
-                accion: 'admin_toggle_store',
-                clave: AppConfig.CLAVE_MAESTRA,
-                status: status
+                accion: 'comprar_item_tienda',
+                alumnoNombre: alumnoNombre,
+                claveP2P: claveP2P,
+                itemId: itemId
             };
 
-            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.TRANSACCION_API_URL, {
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
                 method: 'POST',
                 body: JSON.stringify(payload),
             });
@@ -2867,211 +2936,2627 @@ const AppTransacciones = {
             const result = await response.json();
 
             if (result.success === true) {
-                AppTransacciones.setSuccess(statusMsg, result.message || "¡Estado de la tienda actualizado!");
-                AppData.cargarDatos(false);
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Compra exitosa!");
+                
+                document.getElementById('tienda-clave-p2p-step2').value = "";
+                AppUI.showTiendaStep1();
+                
+                AppData.cargarDatos(false); 
+
             } else {
-                throw new Error(result.message || "Error al cambiar estado.");
+                throw new Error(result.message || "Error desconocido de la API.");
             }
 
         } catch (error) {
             AppTransacciones.setError(statusMsg, error.message);
         } finally {
-            document.getElementById('tienda-force-open-btn').disabled = false;
-            document.getElementById('tienda-force-close-btn').disabled = false;
-            document.getElementById('tienda-force-auto-btn').disabled = false;
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
         }
     },
 
-    // --- Utilidades de Fetch y Estado ---
+    crearActualizarItem: async function() {
+        const statusMsg = document.getElementById('tienda-admin-status-msg');
+        const submitBtn = document.getElementById('tienda-admin-submit-btn');
+        
+        const duracionHoras = parseInt(document.getElementById('tienda-admin-expiracion-input').value, 10);
+        
+        const checkedGroups = AppUI.getAdminGroupCheckboxSelection('tienda-admin-grupos-checkboxes-container');
+        const grupos_permitidos = checkedGroups.join(', ');
 
-    fetchWithExponentialBackoff: async function(url, options, maxRetries = 5, initialDelay = 1000) {
-        for (let attempt = 0; attempt < maxRetries; attempt++) {
-            try {
-                const response = await fetch(url, options);
-                if (response.status !== 429) {
-                    return response;
-                }
-            } catch (error) {
-                if (attempt === maxRetries - 1) throw error;
-            }
-            const delay = initialDelay * Math.pow(2, attempt) + Math.random() * 1000;
-            // No loguear retries
-            await new Promise(resolve => setTimeout(resolve, delay));
+        let expiracion_fecha = '';
+        if (!isNaN(duracionHoras) && duracionHoras > 0) {
+            const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
+            expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
         }
-        throw new Error('Failed to fetch after multiple retries.');
+
+        const item = {
+            ItemID: document.getElementById('tienda-admin-itemid-input').value.trim(),
+            Nombre: document.getElementById('tienda-admin-nombre-input').value.trim(),
+            Descripcion: document.getElementById('tienda-admin-desc-input').value.trim(),
+            Tipo: document.getElementById('tienda-admin-tipo-input').value.trim(),
+            PrecioBase: parseInt(document.getElementById('tienda-admin-precio-input').value, 10),
+            Stock: parseInt(document.getElementById('tienda-admin-stock-input').value, 10),
+            GruposPermitidos: grupos_permitidos, 
+            ExpiracionFecha: expiracion_fecha 
+        };
+        
+        let errorValidacion = "";
+        if (!item.ItemID) {
+            errorValidacion = "El 'ItemID' es obligatorio.";
+        } else if (!item.Nombre) {
+            errorValidacion = "El 'Nombre' es obligatorio.";
+        } else if (isNaN(item.PrecioBase) || item.PrecioBase <= 0) {
+            errorValidacion = "El 'Precio Base' debe ser un número positivo.";
+        } else if (isNaN(item.Stock) || item.Stock < 0) {
+            errorValidacion = "El 'Stock' debe ser un número (0 o más).";
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            return;
+        }
+
+        AppTransacciones.setLoadingState(submitBtn, null, true, 'Guardando...');
+        AppTransacciones.setLoading(statusMsg, `Guardando artículo ${item.ItemID}...`);
+
+        try {
+            const payload = {
+                accion: 'admin_crear_item_tienda',
+                clave: AppConfig.CLAVE_MAESTRA,
+                item: item
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.TRANSACCION_API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
+                AppUI.clearTiendaAdminForm();
+                await AppData.cargarDatos(false);
+                AppUI.renderTiendaItems();
+                
+            } else {
+                throw new Error(result.message || "Error al guardar el artículo.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar');
+        }
+    },
+    
+    eliminarBono: async function(claveBono) {
+        const statusMsg = document.getElementById('bono-admin-status-msg');
+        AppTransacciones.setLoading(statusMsg, `Eliminando bono ${claveBono}...`);
+        
+        document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = true);
+
+        try {
+            const payload = {
+                accion: 'admin_eliminar_bono',
+                clave: AppConfig.CLAVE_MAESTRA,
+                claveBono: claveBono
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
+                await AppData.cargarDatos(false);
+                AppUI.populateBonoList();
+                
+            } else {
+                throw new Error(result.message || "Error al eliminar el bono.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+            document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false);
+        } 
     },
 
-    setLoadingState: function(btn, btnTextEl, isLoading, defaultText) {
-        if (isLoading) {
-            if (btnTextEl) btnTextEl.textContent = '...';
-            if (btn) btn.disabled = true;
-            if (btn) {
-                btn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
-                btn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
-            }
+    // --- LÓGICA DE TIENDA (FLUJO DE 2 PASOS) ---
+    iniciarCompra: function(itemId) {
+        const item = AppState.tienda.items[itemId];
+        const statusMsg = document.getElementById('tienda-status-msg');
+        const buyBtn = document.getElementById(`buy-btn-${itemId}`);
+        
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
+        if (buyBtn) {
+            buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+            buyBtn.disabled = true;
+            buyBtn.querySelector('.btn-text').textContent = "Cargando...";
+        }
+        
+        statusMsg.textContent = "";
+
+        if (!item) {
+            AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
+        } else if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+            AppTransacciones.setError(statusMsg, "Este artículo ha expirado.");
         } else {
-            if (btnTextEl && defaultText) btnTextEl.textContent = defaultText;
-            if (btn) btn.disabled = false;
-            if (btn) {
-                btn.classList.remove('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
-                btn.classList.add('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            AppUI.showTiendaStep2(itemId);
+        }
+        
+        // --- Corrección de Flujo: Restablecer el botón inmediatamente después de la validación ---
+        setTimeout(() => {
+             if (buyBtn) AppUI.updateTiendaButtonStates(); // Esta función restablece el estado si es necesario.
+        }, 50);
+    },
+
+    confirmarCompra: async function() {
+        const statusMsg = document.getElementById('tienda-step2-status-msg'); 
+        const submitBtn = document.getElementById('tienda-submit-step2-btn');
+        const btnText = document.getElementById('tienda-btn-text-step2');
+        
+        AppTransacciones.setLoadingState(submitBtn, btnText, true, 'Comprando...');
+
+        const itemId = AppState.tienda.selectedItem;
+        const alumnoNombre = document.getElementById('tienda-search-alumno-step2').value.trim();
+        const claveP2P = document.getElementById('tienda-clave-p2p-step2').value;
+
+        const item = AppState.tienda.items[itemId];
+        const student = AppState.datosAdicionales.allStudents.find(s => s.nombre === alumnoNombre);
+
+        let errorValidacion = "";
+        if (!itemId || !item) {
+            errorValidacion = "Error interno: Artículo no seleccionado.";
+        } else if (!alumnoNombre || !student) {
+            errorValidacion = "Alumno no encontrado. Por favor, seleccione su nombre de la lista.";
+        } else if (!claveP2P) {
+            errorValidacion = "Debe ingresar su Clave P2P.";
+        } else {
+            const costoFinal = Math.round(item.precio * (1 + AppConfig.TASA_ITBIS));
+            if (student.pinceles < costoFinal) {
+                errorValidacion = "Saldo insuficiente para completar la compra.";
+            } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+                errorValidacion = "El artículo está agotado.";
+            } else {
+                if (item.GruposPermitidos) {
+                    const allowedGroups = (item.GruposPermitidos || '').split(',').map(g => g.trim());
+                    if (!allowedGroups.includes(student.grupoNombre)) {
+                        errorValidacion = `Tu grupo (${student.grupoNombre}) no está autorizado para esta compra.`;
+                    }
+                }
+                if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+                    errorValidacion = "Este artículo ha expirado.";
+                }
             }
         }
-    },
-    
-    setLoading: function(statusMsgEl, message) {
-        if (statusMsgEl) {
-            statusMsgEl.textContent = message;
-            statusMsgEl.className = "text-sm text-center font-medium color-dorado-main h-auto min-h-[1rem]";
-        }
-    },
-
-    setSuccess: function(statusMsgEl, message) {
-        if (statusMsgEl) {
-            statusMsgEl.textContent = message;
-            statusMsgEl.className = "text-sm text-center font-medium color-dorado-main h-auto min-h-[1rem]";
-        }
-    },
-
-    setError: function(statusMsgEl, message, colorClass = 'text-red-600') {
-        if (statusMsgEl) {
-            statusMsgEl.textContent = `Error: ${message}`;
-            statusMsgEl.className = `text-sm text-center font-medium ${colorClass} h-auto min-h-[1em]`;
-        }
-    }
-};
-
-// --- CONTENIDO ESTATICOS (Términos, Privacidad) ---
-// CORRECCIÓN: Eliminación de la clase mt-6 del primer subtítulo en ambos contenidos.
-
-const AppContent = {
-    // Contenido actualizado y profesional para Términos y Condiciones
-    terminosYCondiciones: `
         
-        <strong class="text-lg font-semibold text-slate-800 mb-2 block">I. Alcance y Principios</strong>
-        <p>Los presentes Términos y Condiciones rigen el uso de todos los servicios de banca virtual proporcionados por el Banco del Pincel Dorado (BPD). La utilización de cualquiera de estos servicios implica la aceptación total de estas disposiciones y del Reglamento General.</p>
-        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Usuario:</strong> Cualquier alumno activo dentro del ecosistema.</li>
-            <li><strong>Pinceles (ℙ):</strong> Unidad monetaria virtual de uso exclusivo en el ámbito académico.</li>
-            <li><strong>Clave P2P:</strong> Código personal e intransferible necesario para autorizar transacciones.</li>
-            <li><strong>Tesorería:</strong> Fondo operativo central del BPD destinado a asegurar la liquidez y sostenibilidad del sistema.</li>
-        </ul>
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+            return;
+        }
 
-        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">II. Normativa de Transferencias (P2P)</strong>
-        <p>Este servicio facilita el intercambio de valor entre cuentas de Usuarios.</p>
-        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Irrevocabilidad:</strong> Toda Transferencia confirmada es definitiva e irreversible.</li>
-            <li><strong>Costo Operacional:</strong> Se aplicará una comisión del <strong>${AppConfig.IMPUESTO_P2P_TASA * 100}%</strong> sobre el monto enviado, la cual será debitada de la cuenta del Usuario Remitente.</li>
-            <li><strong>Seguridad:</strong> El Usuario es responsable de la protección de su Clave P2P.</li>
-        </ul>
-
-        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">III. Normativa de Préstamos Flexibles</strong>
-        <p>Líneas de financiamiento sujetas a condiciones de cumplimiento y liquidez.</p>
-        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Cálculo de Intereses:</strong> Interés determinado por una Tasa Base (${AppConfig.PRESTAMO_TASA_BASE * 100}% base) más un factor diario (${AppConfig.PRESTAMO_BONUS_POR_DIA * 100}% por día) según el plazo (3 a 21 días).</li>
-            <li><strong>Compromiso de Reembolso:</strong> El Usuario prestatario está obligado a devolver el capital más intereses en cuotas diarias. El incumplimiento resulta en la aplicación de cargos moratorios.</li>
-            <li><strong>Elegibilidad:</strong> La aprobación se basa en la evaluación de saldo y capacidad de pago.</li>
-        </ul>
-
-        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">IV. Condiciones para Depósitos Flexibles (Inversiones)</strong>
-        <p>Servicio para incentivar el ahorro y la planificación financiera a medio plazo.</p>
-        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Rendimiento:</strong> La ganancia se determina por una Tasa Base (${AppConfig.DEPOSITO_TASA_BASE * 100}% base) más un factor de rendimiento diario (${AppConfig.DEPOSITO_BONUS_POR_DIA * 100}% por día).</li>
-            <li><strong>Retención de Capital:</strong> El capital invertido y los rendimientos generados permanecerán inmovilizados hasta la fecha de vencimiento.</li>
-        </ul>
-
-        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">V. Sanciones por Incumplimiento</strong>
-        <p>Se prohíbe estrictamente el uso de cualquier componente del BPD (incluyendo Transferencias y otros servicios) para realizar actividades que violen las Normas de Convivencia o el Reglamento Académico.</p>
-        <p>La violación de esta normativa resultará en medidas disciplinarias determinadas por el BPD, que pueden incluir la congelación temporal o permanente de la cuenta, y la reversión de transacciones.</p>
-    `,
-    
-    // Contenido actualizado y profesional para Acuerdo de Privacidad
-    acuerdoDePrivacidad: `
+        AppTransacciones.setLoading(statusMsg, `Procesando compra de ${itemId}...`);
         
-        <strong class="text-lg font-semibold text-slate-800 mb-2 block">I. Compromiso de la Entidad</strong>
-        <p>El Banco del Pincel Dorado (BPD) declara su firme compromiso con la máxima confidencialidad en el manejo de los datos operativos de sus Usuarios. La información es utilizada estrictamente para garantizar la funcionalidad, seguridad y estabilidad de este ecosistema académico-financiero.</p>
+        try {
+            const payload = {
+                accion: 'comprar_item_tienda',
+                alumnoNombre: alumnoNombre,
+                claveP2P: claveP2P,
+                itemId: itemId
+            };
 
-        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">II. Datos Recopilados</strong>
-        <p>El BPD únicamente registra y procesa la siguiente información operativa, esencial para el funcionamiento del sistema:</p>
-        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Identificación:</strong> Nombre de Usuario y designación de Grupo Académico.</li>
-            <li><strong>Datos Financieros:</strong> Saldo actual de Pinceles (ℙ), el historial completo de Transacciones y la Clave P2P (gestionada de forma segura).</li>
-            <li><strong>Metadatos:</strong> Registros automáticos de la fecha, hora y tipo de cada operación.</li>
-        </ul>
-        <p class="mt-2 font-semibold">El BPD garantiza que no recopila ni almacena, bajo ninguna circunstancia, datos personales sensibles externos.</p>
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
 
-        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">III. Propósito de la Información</strong>
-        <p>El procesamiento de la información tiene por objeto exclusivo:</p>
-        <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li>Asegurar la correcta y segura ejecución de todas las operaciones financieras.</li>
-            <li>Realizar los cálculos precisos de saldos, rendimientos de inversión e intereses crediticios.</li>
-            <li>Mantener el monitoreo continuo de la estabilidad económica y la detección preventiva de cualquier patrón de actividad anómala.</li>
-            <li>Garantizar el cumplimiento de las normativas internas del BPD.</li>
-        </ul>
+            const result = await response.json();
 
-        <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">IV. Confidencialidad y Uso</strong>
-        <p>El Usuario, al interactuar con el BPD, otorga su consentimiento para el procesamiento de sus datos de transacción. La información es de acceso altamente restringido y el BPD garantiza que no compartirá, venderá ni distribuirá datos de Usuarios a ninguna entidad ajena al entorno académico.</p>
-    `
-};
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Compra exitosa!");
+                
+                document.getElementById('tienda-clave-p2p-step2').value = "";
+                AppUI.showTiendaStep1();
+                
+                AppData.cargarDatos(false); 
 
-function escapeHTML(str) {
-    if (typeof str !== 'string') return str;
-    return str.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-}
-
-window.AppUI = AppUI;
-window.AppFormat = AppFormat;
-window.AppTransacciones = AppTransacciones;
-window.AppContent = AppContent;
-
-window.AppUI.handleEditBono = AppUI.handleEditBono;
-window.AppTransacciones.eliminarBono = AppTransacciones.eliminarBono;
-window.AppUI.handleEditItem = AppUI.handleEditItem;
-window.AppUI.handleDeleteConfirmation = AppUI.handleDeleteConfirmation;
-window.AppUI.cancelDeleteConfirmation = AppUI.cancelDeleteConfirmation;
-window.AppTransacciones.eliminarItem = AppTransacciones.eliminarItem;
-window.AppTransacciones.toggleStoreManual = AppTransacciones.toggleStoreManual;
-window.AppTransacciones.iniciarCompra = AppTransacciones.iniciarCompra;
-window.AppTransacciones.iniciarCanje = AppTransacciones.iniciarCanje;
-window.AppUI.showLegalModal = AppUI.showLegalModal; 
-
-window.onload = function() {
-    AppUI.init();
-    
-    // Inyección de estilos de slider (para cross-browser progress fill)
-    const setupSliderFill = () => {
-        const inputs = document.querySelectorAll('input[type="range"]');
-        inputs.forEach(input => {
-            const update = () => AppUI.updateSliderFill(input);
-            update();
-            input.addEventListener('input', update);
-        });
-    };
-    
-    // Inicializar carrusel hero
-    AppUI.goToHeroSlide(0); 
-
-    // Inicializar listeners del carrusel después de un breve retraso para asegurar que JS y HTML estén listos
-    setTimeout(() => {
-        setupSliderFill();
-        document.getElementById('transacciones-combinadas-modal').addEventListener('click', (e) => {
-             // Listener para tabs dentro del modal combinado
-             if (e.target.classList.contains('tab-btn') && e.target.closest('#transacciones-combinadas-modal')) {
-                 AppUI.changeTransaccionesCombinadasTab(e.target.dataset.tab);
-             }
-             // Listener para cerrar en backdrop
-             if (e.target.id === 'transacciones-combinadas-modal') {
-                 AppUI.hideModal('transacciones-combinadas-modal');
-             }
-        });
-
-        // Asegurar que el relleno de los sliders se aplica al abrir el modal
-        document.getElementById('transacciones-combinadas-modal').addEventListener('click', (e) => {
-            if (e.target.classList.contains('tab-btn')) {
-                 setTimeout(setupSliderFill, 10);
+            } else {
+                throw new Error(result.message || "Error desconocido de la API.");
             }
-        });
-        
-    }, 500); 
 
-};
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+        }
+    },
+
+    crearActualizarItem: async function() {
+        const statusMsg = document.getElementById('tienda-admin-status-msg');
+        const submitBtn = document.getElementById('tienda-admin-submit-btn');
+        
+        const duracionHoras = parseInt(document.getElementById('tienda-admin-expiracion-input').value, 10);
+        
+        const checkedGroups = AppUI.getAdminGroupCheckboxSelection('tienda-admin-grupos-checkboxes-container');
+        const grupos_permitidos = checkedGroups.join(', ');
+
+        let expiracion_fecha = '';
+        if (!isNaN(duracionHoras) && duracionHoras > 0) {
+            const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
+            expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
+        }
+
+        const item = {
+            ItemID: document.getElementById('tienda-admin-itemid-input').value.trim(),
+            Nombre: document.getElementById('tienda-admin-nombre-input').value.trim(),
+            Descripcion: document.getElementById('tienda-admin-desc-input').value.trim(),
+            Tipo: document.getElementById('tienda-admin-tipo-input').value.trim(),
+            PrecioBase: parseInt(document.getElementById('tienda-admin-precio-input').value, 10),
+            Stock: parseInt(document.getElementById('tienda-admin-stock-input').value, 10),
+            GruposPermitidos: grupos_permitidos, 
+            ExpiracionFecha: expiracion_fecha 
+        };
+        
+        let errorValidacion = "";
+        if (!item.ItemID) {
+            errorValidacion = "El 'ItemID' es obligatorio.";
+        } else if (!item.Nombre) {
+            errorValidacion = "El 'Nombre' es obligatorio.";
+        } else if (isNaN(item.PrecioBase) || item.PrecioBase <= 0) {
+            errorValidacion = "El 'Precio Base' debe ser un número positivo.";
+        } else if (isNaN(item.Stock) || item.Stock < 0) {
+            errorValidacion = "El 'Stock' debe ser un número (0 o más).";
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            return;
+        }
+
+        AppTransacciones.setLoadingState(submitBtn, null, true, 'Guardando...');
+        AppTransacciones.setLoading(statusMsg, `Guardando artículo ${item.ItemID}...`);
+
+        try {
+            const payload = {
+                accion: 'admin_crear_item_tienda',
+                clave: AppConfig.CLAVE_MAESTRA,
+                item: item
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.TRANSACCION_API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
+                AppUI.clearTiendaAdminForm();
+                await AppData.cargarDatos(false);
+                AppUI.renderTiendaItems();
+                
+            } else {
+                throw new Error(result.message || "Error al guardar el artículo.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar');
+        }
+    },
+    
+    eliminarBono: async function(claveBono) {
+        const statusMsg = document.getElementById('bono-admin-status-msg');
+        AppTransacciones.setLoading(statusMsg, `Eliminando bono ${claveBono}...`);
+        
+        document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = true);
+
+        try {
+            const payload = {
+                accion: 'admin_eliminar_bono',
+                clave: AppConfig.CLAVE_MAESTRA,
+                claveBono: claveBono
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
+                await AppData.cargarDatos(false);
+                AppUI.populateBonoList();
+                
+            } else {
+                throw new Error(result.message || "Error al eliminar el bono.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+            document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false);
+        } 
+    },
+
+    // --- LÓGICA DE TIENDA (FLUJO DE 2 PASOS) ---
+    iniciarCompra: function(itemId) {
+        const item = AppState.tienda.items[itemId];
+        const statusMsg = document.getElementById('tienda-status-msg');
+        const buyBtn = document.getElementById(`buy-btn-${itemId}`);
+        
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
+        if (buyBtn) {
+            buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+            buyBtn.disabled = true;
+            buyBtn.querySelector('.btn-text').textContent = "Cargando...";
+        }
+        
+        statusMsg.textContent = "";
+
+        if (!item) {
+            AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
+        } else if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+            AppTransacciones.setError(statusMsg, "Este artículo ha expirado.");
+        } else {
+            AppUI.showTiendaStep2(itemId);
+        }
+        
+        // --- Corrección de Flujo: Restablecer el botón inmediatamente después de la validación ---
+        setTimeout(() => {
+             if (buyBtn) AppUI.updateTiendaButtonStates(); // Esta función restablece el estado si es necesario.
+        }, 50);
+    },
+
+    confirmarCompra: async function() {
+        const statusMsg = document.getElementById('tienda-step2-status-msg'); 
+        const submitBtn = document.getElementById('tienda-submit-step2-btn');
+        const btnText = document.getElementById('tienda-btn-text-step2');
+        
+        AppTransacciones.setLoadingState(submitBtn, btnText, true, 'Comprando...');
+
+        const itemId = AppState.tienda.selectedItem;
+        const alumnoNombre = document.getElementById('tienda-search-alumno-step2').value.trim();
+        const claveP2P = document.getElementById('tienda-clave-p2p-step2').value;
+
+        const item = AppState.tienda.items[itemId];
+        const student = AppState.datosAdicionales.allStudents.find(s => s.nombre === alumnoNombre);
+
+        let errorValidacion = "";
+        if (!itemId || !item) {
+            errorValidacion = "Error interno: Artículo no seleccionado.";
+        } else if (!alumnoNombre || !student) {
+            errorValidacion = "Alumno no encontrado. Por favor, seleccione su nombre de la lista.";
+        } else if (!claveP2P) {
+            errorValidacion = "Debe ingresar su Clave P2P.";
+        } else {
+            const costoFinal = Math.round(item.precio * (1 + AppConfig.TASA_ITBIS));
+            if (student.pinceles < costoFinal) {
+                errorValidacion = "Saldo insuficiente para completar la compra.";
+            } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+                errorValidacion = "El artículo está agotado.";
+            } else {
+                if (item.GruposPermitidos) {
+                    const allowedGroups = (item.GruposPermitidos || '').split(',').map(g => g.trim());
+                    if (!allowedGroups.includes(student.grupoNombre)) {
+                        errorValidacion = `Tu grupo (${student.grupoNombre}) no está autorizado para esta compra.`;
+                    }
+                }
+                if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+                    errorValidacion = "Este artículo ha expirado.";
+                }
+            }
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+            return;
+        }
+
+        AppTransacciones.setLoading(statusMsg, `Procesando compra de ${itemId}...`);
+        
+        try {
+            const payload = {
+                accion: 'comprar_item_tienda',
+                alumnoNombre: alumnoNombre,
+                claveP2P: claveP2P,
+                itemId: itemId
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Compra exitosa!");
+                
+                document.getElementById('tienda-clave-p2p-step2').value = "";
+                AppUI.showTiendaStep1();
+                
+                AppData.cargarDatos(false); 
+
+            } else {
+                throw new Error(result.message || "Error desconocido de la API.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+        }
+    },
+
+    crearActualizarItem: async function() {
+        const statusMsg = document.getElementById('tienda-admin-status-msg');
+        const submitBtn = document.getElementById('tienda-admin-submit-btn');
+        
+        const duracionHoras = parseInt(document.getElementById('tienda-admin-expiracion-input').value, 10);
+        
+        const checkedGroups = AppUI.getAdminGroupCheckboxSelection('tienda-admin-grupos-checkboxes-container');
+        const grupos_permitidos = checkedGroups.join(', ');
+
+        let expiracion_fecha = '';
+        if (!isNaN(duracionHoras) && duracionHoras > 0) {
+            const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
+            expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
+        }
+
+        const item = {
+            ItemID: document.getElementById('tienda-admin-itemid-input').value.trim(),
+            Nombre: document.getElementById('tienda-admin-nombre-input').value.trim(),
+            Descripcion: document.getElementById('tienda-admin-desc-input').value.trim(),
+            Tipo: document.getElementById('tienda-admin-tipo-input').value.trim(),
+            PrecioBase: parseInt(document.getElementById('tienda-admin-precio-input').value, 10),
+            Stock: parseInt(document.getElementById('tienda-admin-stock-input').value, 10),
+            GruposPermitidos: grupos_permitidos, 
+            ExpiracionFecha: expiracion_fecha 
+        };
+        
+        let errorValidacion = "";
+        if (!item.ItemID) {
+            errorValidacion = "El 'ItemID' es obligatorio.";
+        } else if (!item.Nombre) {
+            errorValidacion = "El 'Nombre' es obligatorio.";
+        } else if (isNaN(item.PrecioBase) || item.PrecioBase <= 0) {
+            errorValidacion = "El 'Precio Base' debe ser un número positivo.";
+        } else if (isNaN(item.Stock) || item.Stock < 0) {
+            errorValidacion = "El 'Stock' debe ser un número (0 o más).";
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            return;
+        }
+
+        AppTransacciones.setLoadingState(submitBtn, null, true, 'Guardando...');
+        AppTransacciones.setLoading(statusMsg, `Guardando artículo ${item.ItemID}...`);
+
+        try {
+            const payload = {
+                accion: 'admin_crear_item_tienda',
+                clave: AppConfig.CLAVE_MAESTRA,
+                item: item
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.TRANSACCION_API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
+                AppUI.clearTiendaAdminForm();
+                await AppData.cargarDatos(false);
+                AppUI.renderTiendaItems();
+                
+            } else {
+                throw new Error(result.message || "Error al guardar el artículo.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar');
+        }
+    },
+    
+    eliminarBono: async function(claveBono) {
+        const statusMsg = document.getElementById('bono-admin-status-msg');
+        AppTransacciones.setLoading(statusMsg, `Eliminando bono ${claveBono}...`);
+        
+        document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = true);
+
+        try {
+            const payload = {
+                accion: 'admin_eliminar_bono',
+                clave: AppConfig.CLAVE_MAESTRA,
+                claveBono: claveBono
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
+                await AppData.cargarDatos(false);
+                AppUI.populateBonoList();
+                
+            } else {
+                throw new Error(result.message || "Error al eliminar el bono.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+            document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false);
+        } 
+    },
+
+    // --- LÓGICA DE TIENDA (FLUJO DE 2 PASOS) ---
+    iniciarCompra: function(itemId) {
+        const item = AppState.tienda.items[itemId];
+        const statusMsg = document.getElementById('tienda-status-msg');
+        const buyBtn = document.getElementById(`buy-btn-${itemId}`);
+        
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
+        if (buyBtn) {
+            buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+            buyBtn.disabled = true;
+            buyBtn.querySelector('.btn-text').textContent = "Cargando...";
+        }
+        
+        statusMsg.textContent = "";
+
+        if (!item) {
+            AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
+        } else if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+            AppTransacciones.setError(statusMsg, "Este artículo ha expirado.");
+        } else {
+            AppUI.showTiendaStep2(itemId);
+        }
+        
+        // --- Corrección de Flujo: Restablecer el botón inmediatamente después de la validación ---
+        setTimeout(() => {
+             if (buyBtn) AppUI.updateTiendaButtonStates(); // Esta función restablece el estado si es necesario.
+        }, 50);
+    },
+
+    confirmarCompra: async function() {
+        const statusMsg = document.getElementById('tienda-step2-status-msg'); 
+        const submitBtn = document.getElementById('tienda-submit-step2-btn');
+        const btnText = document.getElementById('tienda-btn-text-step2');
+        
+        AppTransacciones.setLoadingState(submitBtn, btnText, true, 'Comprando...');
+
+        const itemId = AppState.tienda.selectedItem;
+        const alumnoNombre = document.getElementById('tienda-search-alumno-step2').value.trim();
+        const claveP2P = document.getElementById('tienda-clave-p2p-step2').value;
+
+        const item = AppState.tienda.items[itemId];
+        const student = AppState.datosAdicionales.allStudents.find(s => s.nombre === alumnoNombre);
+
+        let errorValidacion = "";
+        if (!itemId || !item) {
+            errorValidacion = "Error interno: Artículo no seleccionado.";
+        } else if (!alumnoNombre || !student) {
+            errorValidacion = "Alumno no encontrado. Por favor, seleccione su nombre de la lista.";
+        } else if (!claveP2P) {
+            errorValidacion = "Debe ingresar su Clave P2P.";
+        } else {
+            const costoFinal = Math.round(item.precio * (1 + AppConfig.TASA_ITBIS));
+            if (student.pinceles < costoFinal) {
+                errorValidacion = "Saldo insuficiente para completar la compra.";
+            } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+                errorValidacion = "El artículo está agotado.";
+            } else {
+                if (item.GruposPermitidos) {
+                    const allowedGroups = (item.GruposPermitidos || '').split(',').map(g => g.trim());
+                    if (!allowedGroups.includes(student.grupoNombre)) {
+                        errorValidacion = `Tu grupo (${student.grupoNombre}) no está autorizado para esta compra.`;
+                    }
+                }
+                if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+                    errorValidacion = "Este artículo ha expirado.";
+                }
+            }
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+            return;
+        }
+
+        AppTransacciones.setLoading(statusMsg, `Procesando compra de ${itemId}...`);
+        
+        try {
+            const payload = {
+                accion: 'comprar_item_tienda',
+                alumnoNombre: alumnoNombre,
+                claveP2P: claveP2P,
+                itemId: itemId
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Compra exitosa!");
+                
+                document.getElementById('tienda-clave-p2p-step2').value = "";
+                AppUI.showTiendaStep1();
+                
+                AppData.cargarDatos(false); 
+
+            } else {
+                throw new Error(result.message || "Error desconocido de la API.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+        }
+    },
+
+    crearActualizarItem: async function() {
+        const statusMsg = document.getElementById('tienda-admin-status-msg');
+        const submitBtn = document.getElementById('tienda-admin-submit-btn');
+        
+        const duracionHoras = parseInt(document.getElementById('tienda-admin-expiracion-input').value, 10);
+        
+        const checkedGroups = AppUI.getAdminGroupCheckboxSelection('tienda-admin-grupos-checkboxes-container');
+        const grupos_permitidos = checkedGroups.join(', ');
+
+        let expiracion_fecha = '';
+        if (!isNaN(duracionHoras) && duracionHoras > 0) {
+            const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
+            expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
+        }
+
+        const item = {
+            ItemID: document.getElementById('tienda-admin-itemid-input').value.trim(),
+            Nombre: document.getElementById('tienda-admin-nombre-input').value.trim(),
+            Descripcion: document.getElementById('tienda-admin-desc-input').value.trim(),
+            Tipo: document.getElementById('tienda-admin-tipo-input').value.trim(),
+            PrecioBase: parseInt(document.getElementById('tienda-admin-precio-input').value, 10),
+            Stock: parseInt(document.getElementById('tienda-admin-stock-input').value, 10),
+            GruposPermitidos: grupos_permitidos, 
+            ExpiracionFecha: expiracion_fecha 
+        };
+        
+        let errorValidacion = "";
+        if (!item.ItemID) {
+            errorValidacion = "El 'ItemID' es obligatorio.";
+        } else if (!item.Nombre) {
+            errorValidacion = "El 'Nombre' es obligatorio.";
+        } else if (isNaN(item.PrecioBase) || item.PrecioBase <= 0) {
+            errorValidacion = "El 'Precio Base' debe ser un número positivo.";
+        } else if (isNaN(item.Stock) || item.Stock < 0) {
+            errorValidacion = "El 'Stock' debe ser un número (0 o más).";
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            return;
+        }
+
+        AppTransacciones.setLoadingState(submitBtn, null, true, 'Guardando...');
+        AppTransacciones.setLoading(statusMsg, `Guardando artículo ${item.ItemID}...`);
+
+        try {
+            const payload = {
+                accion: 'admin_crear_item_tienda',
+                clave: AppConfig.CLAVE_MAESTRA,
+                item: item
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.TRANSACCION_API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
+                AppUI.clearTiendaAdminForm();
+                await AppData.cargarDatos(false);
+                AppUI.renderTiendaItems();
+                
+            } else {
+                throw new Error(result.message || "Error al guardar el artículo.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar');
+        }
+    },
+    
+    eliminarBono: async function(claveBono) {
+        const statusMsg = document.getElementById('bono-admin-status-msg');
+        AppTransacciones.setLoading(statusMsg, `Eliminando bono ${claveBono}...`);
+        
+        document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = true);
+
+        try {
+            const payload = {
+                accion: 'admin_eliminar_bono',
+                clave: AppConfig.CLAVE_MAESTRA,
+                claveBono: claveBono
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
+                await AppData.cargarDatos(false);
+                AppUI.populateBonoList();
+                
+            } else {
+                throw new Error(result.message || "Error al eliminar el bono.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+            document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false);
+        } 
+    },
+
+    // --- LÓGICA DE TIENDA (FLUJO DE 2 PASOS) ---
+    iniciarCompra: function(itemId) {
+        const item = AppState.tienda.items[itemId];
+        const statusMsg = document.getElementById('tienda-status-msg');
+        const buyBtn = document.getElementById(`buy-btn-${itemId}`);
+        
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
+        if (buyBtn) {
+            buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+            buyBtn.disabled = true;
+            buyBtn.querySelector('.btn-text').textContent = "Cargando...";
+        }
+        
+        statusMsg.textContent = "";
+
+        if (!item) {
+            AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
+        } else if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+            AppTransacciones.setError(statusMsg, "Este artículo ha expirado.");
+        } else {
+            AppUI.showTiendaStep2(itemId);
+        }
+        
+        // --- Corrección de Flujo: Restablecer el botón inmediatamente después de la validación ---
+        setTimeout(() => {
+             if (buyBtn) AppUI.updateTiendaButtonStates(); // Esta función restablece el estado si es necesario.
+        }, 50);
+    },
+
+    confirmarCompra: async function() {
+        const statusMsg = document.getElementById('tienda-step2-status-msg'); 
+        const submitBtn = document.getElementById('tienda-submit-step2-btn');
+        const btnText = document.getElementById('tienda-btn-text-step2');
+        
+        AppTransacciones.setLoadingState(submitBtn, btnText, true, 'Comprando...');
+
+        const itemId = AppState.tienda.selectedItem;
+        const alumnoNombre = document.getElementById('tienda-search-alumno-step2').value.trim();
+        const claveP2P = document.getElementById('tienda-clave-p2p-step2').value;
+
+        const item = AppState.tienda.items[itemId];
+        const student = AppState.datosAdicionales.allStudents.find(s => s.nombre === alumnoNombre);
+
+        let errorValidacion = "";
+        if (!itemId || !item) {
+            errorValidacion = "Error interno: Artículo no seleccionado.";
+        } else if (!alumnoNombre || !student) {
+            errorValidacion = "Alumno no encontrado. Por favor, seleccione su nombre de la lista.";
+        } else if (!claveP2P) {
+            errorValidacion = "Debe ingresar su Clave P2P.";
+        } else {
+            const costoFinal = Math.round(item.precio * (1 + AppConfig.TASA_ITBIS));
+            if (student.pinceles < costoFinal) {
+                errorValidacion = "Saldo insuficiente para completar la compra.";
+            } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+                errorValidacion = "El artículo está agotado.";
+            } else {
+                if (item.GruposPermitidos) {
+                    const allowedGroups = (item.GruposPermitidos || '').split(',').map(g => g.trim());
+                    if (!allowedGroups.includes(student.grupoNombre)) {
+                        errorValidacion = `Tu grupo (${student.grupoNombre}) no está autorizado para esta compra.`;
+                    }
+                }
+                if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+                    errorValidacion = "Este artículo ha expirado.";
+                }
+            }
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+            return;
+        }
+
+        AppTransacciones.setLoading(statusMsg, `Procesando compra de ${itemId}...`);
+        
+        try {
+            const payload = {
+                accion: 'comprar_item_tienda',
+                alumnoNombre: alumnoNombre,
+                claveP2P: claveP2P,
+                itemId: itemId
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Compra exitosa!");
+                
+                document.getElementById('tienda-clave-p2p-step2').value = "";
+                AppUI.showTiendaStep1();
+                
+                AppData.cargarDatos(false); 
+
+            } else {
+                throw new Error(result.message || "Error desconocido de la API.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+        }
+    },
+
+    crearActualizarItem: async function() {
+        const statusMsg = document.getElementById('tienda-admin-status-msg');
+        const submitBtn = document.getElementById('tienda-admin-submit-btn');
+        
+        const duracionHoras = parseInt(document.getElementById('tienda-admin-expiracion-input').value, 10);
+        
+        const checkedGroups = AppUI.getAdminGroupCheckboxSelection('tienda-admin-grupos-checkboxes-container');
+        const grupos_permitidos = checkedGroups.join(', ');
+
+        let expiracion_fecha = '';
+        if (!isNaN(duracionHoras) && duracionHoras > 0) {
+            const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
+            expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
+        }
+
+        const item = {
+            ItemID: document.getElementById('tienda-admin-itemid-input').value.trim(),
+            Nombre: document.getElementById('tienda-admin-nombre-input').value.trim(),
+            Descripcion: document.getElementById('tienda-admin-desc-input').value.trim(),
+            Tipo: document.getElementById('tienda-admin-tipo-input').value.trim(),
+            PrecioBase: parseInt(document.getElementById('tienda-admin-precio-input').value, 10),
+            Stock: parseInt(document.getElementById('tienda-admin-stock-input').value, 10),
+            GruposPermitidos: grupos_permitidos, 
+            ExpiracionFecha: expiracion_fecha 
+        };
+        
+        let errorValidacion = "";
+        if (!item.ItemID) {
+            errorValidacion = "El 'ItemID' es obligatorio.";
+        } else if (!item.Nombre) {
+            errorValidacion = "El 'Nombre' es obligatorio.";
+        } else if (isNaN(item.PrecioBase) || item.PrecioBase <= 0) {
+            errorValidacion = "El 'Precio Base' debe ser un número positivo.";
+        } else if (isNaN(item.Stock) || item.Stock < 0) {
+            errorValidacion = "El 'Stock' debe ser un número (0 o más).";
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            return;
+        }
+
+        AppTransacciones.setLoadingState(submitBtn, null, true, 'Guardando...');
+        AppTransacciones.setLoading(statusMsg, `Guardando artículo ${item.ItemID}...`);
+
+        try {
+            const payload = {
+                accion: 'admin_crear_item_tienda',
+                clave: AppConfig.CLAVE_MAESTRA,
+                item: item
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.TRANSACCION_API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
+                AppUI.clearTiendaAdminForm();
+                await AppData.cargarDatos(false);
+                AppUI.renderTiendaItems();
+                
+            } else {
+                throw new Error(result.message || "Error al guardar el artículo.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar');
+        }
+    },
+    
+    eliminarBono: async function(claveBono) {
+        const statusMsg = document.getElementById('bono-admin-status-msg');
+        AppTransacciones.setLoading(statusMsg, `Eliminando bono ${claveBono}...`);
+        
+        document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = true);
+
+        try {
+            const payload = {
+                accion: 'admin_eliminar_bono',
+                clave: AppConfig.CLAVE_MAESTRA,
+                claveBono: claveBono
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
+                await AppData.cargarDatos(false);
+                AppUI.populateBonoList();
+                
+            } else {
+                throw new Error(result.message || "Error al eliminar el bono.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+            document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false);
+        } 
+    },
+
+    // --- LÓGICA DE TIENDA (FLUJO DE 2 PASOS) ---
+    iniciarCompra: function(itemId) {
+        const item = AppState.tienda.items[itemId];
+        const statusMsg = document.getElementById('tienda-status-msg');
+        const buyBtn = document.getElementById(`buy-btn-${itemId}`);
+        
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
+        if (buyBtn) {
+            buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+            buyBtn.disabled = true;
+            buyBtn.querySelector('.btn-text').textContent = "Cargando...";
+        }
+        
+        statusMsg.textContent = "";
+
+        if (!item) {
+            AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
+        } else if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+            AppTransacciones.setError(statusMsg, "Este artículo ha expirado.");
+        } else {
+            AppUI.showTiendaStep2(itemId);
+        }
+        
+        // --- Corrección de Flujo: Restablecer el botón inmediatamente después de la validación ---
+        setTimeout(() => {
+             if (buyBtn) AppUI.updateTiendaButtonStates(); // Esta función restablece el estado si es necesario.
+        }, 50);
+    },
+
+    confirmarCompra: async function() {
+        const statusMsg = document.getElementById('tienda-step2-status-msg'); 
+        const submitBtn = document.getElementById('tienda-submit-step2-btn');
+        const btnText = document.getElementById('tienda-btn-text-step2');
+        
+        AppTransacciones.setLoadingState(submitBtn, btnText, true, 'Comprando...');
+
+        const itemId = AppState.tienda.selectedItem;
+        const alumnoNombre = document.getElementById('tienda-search-alumno-step2').value.trim();
+        const claveP2P = document.getElementById('tienda-clave-p2p-step2').value;
+
+        const item = AppState.tienda.items[itemId];
+        const student = AppState.datosAdicionales.allStudents.find(s => s.nombre === alumnoNombre);
+
+        let errorValidacion = "";
+        if (!itemId || !item) {
+            errorValidacion = "Error interno: Artículo no seleccionado.";
+        } else if (!alumnoNombre || !student) {
+            errorValidacion = "Alumno no encontrado. Por favor, seleccione su nombre de la lista.";
+        } else if (!claveP2P) {
+            errorValidacion = "Debe ingresar su Clave P2P.";
+        } else {
+            const costoFinal = Math.round(item.precio * (1 + AppConfig.TASA_ITBIS));
+            if (student.pinceles < costoFinal) {
+                errorValidacion = "Saldo insuficiente para completar la compra.";
+            } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+                errorValidacion = "El artículo está agotado.";
+            } else {
+                if (item.GruposPermitidos) {
+                    const allowedGroups = (item.GruposPermitidos || '').split(',').map(g => g.trim());
+                    if (!allowedGroups.includes(student.grupoNombre)) {
+                        errorValidacion = `Tu grupo (${student.grupoNombre}) no está autorizado para esta compra.`;
+                    }
+                }
+                if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+                    errorValidacion = "Este artículo ha expirado.";
+                }
+            }
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+            return;
+        }
+
+        AppTransacciones.setLoading(statusMsg, `Procesando compra de ${itemId}...`);
+        
+        try {
+            const payload = {
+                accion: 'comprar_item_tienda',
+                alumnoNombre: alumnoNombre,
+                claveP2P: claveP2P,
+                itemId: itemId
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Compra exitosa!");
+                
+                document.getElementById('tienda-clave-p2p-step2').value = "";
+                AppUI.showTiendaStep1();
+                
+                AppData.cargarDatos(false); 
+
+            } else {
+                throw new Error(result.message || "Error desconocido de la API.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+        }
+    },
+
+    crearActualizarItem: async function() {
+        const statusMsg = document.getElementById('tienda-admin-status-msg');
+        const submitBtn = document.getElementById('tienda-admin-submit-btn');
+        
+        const duracionHoras = parseInt(document.getElementById('tienda-admin-expiracion-input').value, 10);
+        
+        const checkedGroups = AppUI.getAdminGroupCheckboxSelection('tienda-admin-grupos-checkboxes-container');
+        const grupos_permitidos = checkedGroups.join(', ');
+
+        let expiracion_fecha = '';
+        if (!isNaN(duracionHoras) && duracionHoras > 0) {
+            const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
+            expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
+        }
+
+        const item = {
+            ItemID: document.getElementById('tienda-admin-itemid-input').value.trim(),
+            Nombre: document.getElementById('tienda-admin-nombre-input').value.trim(),
+            Descripcion: document.getElementById('tienda-admin-desc-input').value.trim(),
+            Tipo: document.getElementById('tienda-admin-tipo-input').value.trim(),
+            PrecioBase: parseInt(document.getElementById('tienda-admin-precio-input').value, 10),
+            Stock: parseInt(document.getElementById('tienda-admin-stock-input').value, 10),
+            GruposPermitidos: grupos_permitidos, 
+            ExpiracionFecha: expiracion_fecha 
+        };
+        
+        let errorValidacion = "";
+        if (!item.ItemID) {
+            errorValidacion = "El 'ItemID' es obligatorio.";
+        } else if (!item.Nombre) {
+            errorValidacion = "El 'Nombre' es obligatorio.";
+        } else if (isNaN(item.PrecioBase) || item.PrecioBase <= 0) {
+            errorValidacion = "El 'Precio Base' debe ser un número positivo.";
+        } else if (isNaN(item.Stock) || item.Stock < 0) {
+            errorValidacion = "El 'Stock' debe ser un número (0 o más).";
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            return;
+        }
+
+        AppTransacciones.setLoadingState(submitBtn, null, true, 'Guardando...');
+        AppTransacciones.setLoading(statusMsg, `Guardando artículo ${item.ItemID}...`);
+
+        try {
+            const payload = {
+                accion: 'admin_crear_item_tienda',
+                clave: AppConfig.CLAVE_MAESTRA,
+                item: item
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.TRANSACCION_API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
+                AppUI.clearTiendaAdminForm();
+                await AppData.cargarDatos(false);
+                AppUI.renderTiendaItems();
+                
+            } else {
+                throw new Error(result.message || "Error al guardar el artículo.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar');
+        }
+    },
+    
+    eliminarBono: async function(claveBono) {
+        const statusMsg = document.getElementById('bono-admin-status-msg');
+        AppTransacciones.setLoading(statusMsg, `Eliminando bono ${claveBono}...`);
+        
+        document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = true);
+
+        try {
+            const payload = {
+                accion: 'admin_eliminar_bono',
+                clave: AppConfig.CLAVE_MAESTRA,
+                claveBono: claveBono
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
+                await AppData.cargarDatos(false);
+                AppUI.populateBonoList();
+                
+            } else {
+                throw new Error(result.message || "Error al eliminar el bono.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+            document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false);
+        } 
+    },
+
+    // --- LÓGICA DE TIENDA (FLUJO DE 2 PASOS) ---
+    iniciarCompra: function(itemId) {
+        const item = AppState.tienda.items[itemId];
+        const statusMsg = document.getElementById('tienda-status-msg');
+        const buyBtn = document.getElementById(`buy-btn-${itemId}`);
+        
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
+        if (buyBtn) {
+            buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+            buyBtn.disabled = true;
+            buyBtn.querySelector('.btn-text').textContent = "Cargando...";
+        }
+        
+        statusMsg.textContent = "";
+
+        if (!item) {
+            AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
+        } else if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+            AppTransacciones.setError(statusMsg, "Este artículo ha expirado.");
+        } else {
+            AppUI.showTiendaStep2(itemId);
+        }
+        
+        // --- Corrección de Flujo: Restablecer el botón inmediatamente después de la validación ---
+        setTimeout(() => {
+             if (buyBtn) AppUI.updateTiendaButtonStates(); // Esta función restablece el estado si es necesario.
+        }, 50);
+    },
+
+    confirmarCompra: async function() {
+        const statusMsg = document.getElementById('tienda-step2-status-msg'); 
+        const submitBtn = document.getElementById('tienda-submit-step2-btn');
+        const btnText = document.getElementById('tienda-btn-text-step2');
+        
+        AppTransacciones.setLoadingState(submitBtn, btnText, true, 'Comprando...');
+
+        const itemId = AppState.tienda.selectedItem;
+        const alumnoNombre = document.getElementById('tienda-search-alumno-step2').value.trim();
+        const claveP2P = document.getElementById('tienda-clave-p2p-step2').value;
+
+        const item = AppState.tienda.items[itemId];
+        const student = AppState.datosAdicionales.allStudents.find(s => s.nombre === alumnoNombre);
+
+        let errorValidacion = "";
+        if (!itemId || !item) {
+            errorValidacion = "Error interno: Artículo no seleccionado.";
+        } else if (!alumnoNombre || !student) {
+            errorValidacion = "Alumno no encontrado. Por favor, seleccione su nombre de la lista.";
+        } else if (!claveP2P) {
+            errorValidacion = "Debe ingresar su Clave P2P.";
+        } else {
+            const costoFinal = Math.round(item.precio * (1 + AppConfig.TASA_ITBIS));
+            if (student.pinceles < costoFinal) {
+                errorValidacion = "Saldo insuficiente para completar la compra.";
+            } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+                errorValidacion = "El artículo está agotado.";
+            } else {
+                if (item.GruposPermitidos) {
+                    const allowedGroups = (item.GruposPermitidos || '').split(',').map(g => g.trim());
+                    if (!allowedGroups.includes(student.grupoNombre)) {
+                        errorValidacion = `Tu grupo (${student.grupoNombre}) no está autorizado para esta compra.`;
+                    }
+                }
+                if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+                    errorValidacion = "Este artículo ha expirado.";
+                }
+            }
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+            return;
+        }
+
+        AppTransacciones.setLoading(statusMsg, `Procesando compra de ${itemId}...`);
+        
+        try {
+            const payload = {
+                accion: 'comprar_item_tienda',
+                alumnoNombre: alumnoNombre,
+                claveP2P: claveP2P,
+                itemId: itemId
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Compra exitosa!");
+                
+                document.getElementById('tienda-clave-p2p-step2').value = "";
+                AppUI.showTiendaStep1();
+                
+                AppData.cargarDatos(false); 
+
+            } else {
+                throw new Error(result.message || "Error desconocido de la API.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+        }
+    },
+
+    crearActualizarItem: async function() {
+        const statusMsg = document.getElementById('tienda-admin-status-msg');
+        const submitBtn = document.getElementById('tienda-admin-submit-btn');
+        
+        const duracionHoras = parseInt(document.getElementById('tienda-admin-expiracion-input').value, 10);
+        
+        const checkedGroups = AppUI.getAdminGroupCheckboxSelection('tienda-admin-grupos-checkboxes-container');
+        const grupos_permitidos = checkedGroups.join(', ');
+
+        let expiracion_fecha = '';
+        if (!isNaN(duracionHoras) && duracionHoras > 0) {
+            const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
+            expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
+        }
+
+        const item = {
+            ItemID: document.getElementById('tienda-admin-itemid-input').value.trim(),
+            Nombre: document.getElementById('tienda-admin-nombre-input').value.trim(),
+            Descripcion: document.getElementById('tienda-admin-desc-input').value.trim(),
+            Tipo: document.getElementById('tienda-admin-tipo-input').value.trim(),
+            PrecioBase: parseInt(document.getElementById('tienda-admin-precio-input').value, 10),
+            Stock: parseInt(document.getElementById('tienda-admin-stock-input').value, 10),
+            GruposPermitidos: grupos_permitidos, 
+            ExpiracionFecha: expiracion_fecha 
+        };
+        
+        let errorValidacion = "";
+        if (!item.ItemID) {
+            errorValidacion = "El 'ItemID' es obligatorio.";
+        } else if (!item.Nombre) {
+            errorValidacion = "El 'Nombre' es obligatorio.";
+        } else if (isNaN(item.PrecioBase) || item.PrecioBase <= 0) {
+            errorValidacion = "El 'Precio Base' debe ser un número positivo.";
+        } else if (isNaN(item.Stock) || item.Stock < 0) {
+            errorValidacion = "El 'Stock' debe ser un número (0 o más).";
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            return;
+        }
+
+        AppTransacciones.setLoadingState(submitBtn, null, true, 'Guardando...');
+        AppTransacciones.setLoading(statusMsg, `Guardando artículo ${item.ItemID}...`);
+
+        try {
+            const payload = {
+                accion: 'admin_crear_item_tienda',
+                clave: AppConfig.CLAVE_MAESTRA,
+                item: item
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.TRANSACCION_API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
+                AppUI.clearTiendaAdminForm();
+                await AppData.cargarDatos(false);
+                AppUI.renderTiendaItems();
+                
+            } else {
+                throw new Error(result.message || "Error al guardar el artículo.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar');
+        }
+    },
+    
+    eliminarBono: async function(claveBono) {
+        const statusMsg = document.getElementById('bono-admin-status-msg');
+        AppTransacciones.setLoading(statusMsg, `Eliminando bono ${claveBono}...`);
+        
+        document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = true);
+
+        try {
+            const payload = {
+                accion: 'admin_eliminar_bono',
+                clave: AppConfig.CLAVE_MAESTRA,
+                claveBono: claveBono
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
+                await AppData.cargarDatos(false);
+                AppUI.populateBonoList();
+                
+            } else {
+                throw new Error(result.message || "Error al eliminar el bono.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+            document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false);
+        } 
+    },
+
+    // --- LÓGICA DE TIENDA (FLUJO DE 2 PASOS) ---
+    iniciarCompra: function(itemId) {
+        const item = AppState.tienda.items[itemId];
+        const statusMsg = document.getElementById('tienda-status-msg');
+        const buyBtn = document.getElementById(`buy-btn-${itemId}`);
+        
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
+        if (buyBtn) {
+            buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+            buyBtn.disabled = true;
+            buyBtn.querySelector('.btn-text').textContent = "Cargando...";
+        }
+        
+        statusMsg.textContent = "";
+
+        if (!item) {
+            AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
+        } else if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+            AppTransacciones.setError(statusMsg, "Este artículo ha expirado.");
+        } else {
+            AppUI.showTiendaStep2(itemId);
+        }
+        
+        // --- Corrección de Flujo: Restablecer el botón inmediatamente después de la validación ---
+        setTimeout(() => {
+             if (buyBtn) AppUI.updateTiendaButtonStates(); // Esta función restablece el estado si es necesario.
+        }, 50);
+    },
+
+    confirmarCompra: async function() {
+        const statusMsg = document.getElementById('tienda-step2-status-msg'); 
+        const submitBtn = document.getElementById('tienda-submit-step2-btn');
+        const btnText = document.getElementById('tienda-btn-text-step2');
+        
+        AppTransacciones.setLoadingState(submitBtn, btnText, true, 'Comprando...');
+
+        const itemId = AppState.tienda.selectedItem;
+        const alumnoNombre = document.getElementById('tienda-search-alumno-step2').value.trim();
+        const claveP2P = document.getElementById('tienda-clave-p2p-step2').value;
+
+        const item = AppState.tienda.items[itemId];
+        const student = AppState.datosAdicionales.allStudents.find(s => s.nombre === alumnoNombre);
+
+        let errorValidacion = "";
+        if (!itemId || !item) {
+            errorValidacion = "Error interno: Artículo no seleccionado.";
+        } else if (!alumnoNombre || !student) {
+            errorValidacion = "Alumno no encontrado. Por favor, seleccione su nombre de la lista.";
+        } else if (!claveP2P) {
+            errorValidacion = "Debe ingresar su Clave P2P.";
+        } else {
+            const costoFinal = Math.round(item.precio * (1 + AppConfig.TASA_ITBIS));
+            if (student.pinceles < costoFinal) {
+                errorValidacion = "Saldo insuficiente para completar la compra.";
+            } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+                errorValidacion = "El artículo está agotado.";
+            } else {
+                if (item.GruposPermitidos) {
+                    const allowedGroups = (item.GruposPermitidos || '').split(',').map(g => g.trim());
+                    if (!allowedGroups.includes(student.grupoNombre)) {
+                        errorValidacion = `Tu grupo (${student.grupoNombre}) no está autorizado para esta compra.`;
+                    }
+                }
+                if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+                    errorValidacion = "Este artículo ha expirado.";
+                }
+            }
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+            return;
+        }
+
+        AppTransacciones.setLoading(statusMsg, `Procesando compra de ${itemId}...`);
+        
+        try {
+            const payload = {
+                accion: 'comprar_item_tienda',
+                alumnoNombre: alumnoNombre,
+                claveP2P: claveP2P,
+                itemId: itemId
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Compra exitosa!");
+                
+                document.getElementById('tienda-clave-p2p-step2').value = "";
+                AppUI.showTiendaStep1();
+                
+                AppData.cargarDatos(false); 
+
+            } else {
+                throw new Error(result.message || "Error desconocido de la API.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+        }
+    },
+
+    crearActualizarItem: async function() {
+        const statusMsg = document.getElementById('tienda-admin-status-msg');
+        const submitBtn = document.getElementById('tienda-admin-submit-btn');
+        
+        const duracionHoras = parseInt(document.getElementById('tienda-admin-expiracion-input').value, 10);
+        
+        const checkedGroups = AppUI.getAdminGroupCheckboxSelection('tienda-admin-grupos-checkboxes-container');
+        const grupos_permitidos = checkedGroups.join(', ');
+
+        let expiracion_fecha = '';
+        if (!isNaN(duracionHoras) && duracionHoras > 0) {
+            const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
+            expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
+        }
+
+        const item = {
+            ItemID: document.getElementById('tienda-admin-itemid-input').value.trim(),
+            Nombre: document.getElementById('tienda-admin-nombre-input').value.trim(),
+            Descripcion: document.getElementById('tienda-admin-desc-input').value.trim(),
+            Tipo: document.getElementById('tienda-admin-tipo-input').value.trim(),
+            PrecioBase: parseInt(document.getElementById('tienda-admin-precio-input').value, 10),
+            Stock: parseInt(document.getElementById('tienda-admin-stock-input').value, 10),
+            GruposPermitidos: grupos_permitidos, 
+            ExpiracionFecha: expiracion_fecha 
+        };
+        
+        let errorValidacion = "";
+        if (!item.ItemID) {
+            errorValidacion = "El 'ItemID' es obligatorio.";
+        } else if (!item.Nombre) {
+            errorValidacion = "El 'Nombre' es obligatorio.";
+        } else if (isNaN(item.PrecioBase) || item.PrecioBase <= 0) {
+            errorValidacion = "El 'Precio Base' debe ser un número positivo.";
+        } else if (isNaN(item.Stock) || item.Stock < 0) {
+            errorValidacion = "El 'Stock' debe ser un número (0 o más).";
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            return;
+        }
+
+        AppTransacciones.setLoadingState(submitBtn, null, true, 'Guardando...');
+        AppTransacciones.setLoading(statusMsg, `Guardando artículo ${item.ItemID}...`);
+
+        try {
+            const payload = {
+                accion: 'admin_crear_item_tienda',
+                clave: AppConfig.CLAVE_MAESTRA,
+                item: item
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.TRANSACCION_API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
+                AppUI.clearTiendaAdminForm();
+                await AppData.cargarDatos(false);
+                AppUI.renderTiendaItems();
+                
+            } else {
+                throw new Error(result.message || "Error al guardar el artículo.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar');
+        }
+    },
+    
+    eliminarBono: async function(claveBono) {
+        const statusMsg = document.getElementById('bono-admin-status-msg');
+        AppTransacciones.setLoading(statusMsg, `Eliminando bono ${claveBono}...`);
+        
+        document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = true);
+
+        try {
+            const payload = {
+                accion: 'admin_eliminar_bono',
+                clave: AppConfig.CLAVE_MAESTRA,
+                claveBono: claveBono
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
+                await AppData.cargarDatos(false);
+                AppUI.populateBonoList();
+                
+            } else {
+                throw new Error(result.message || "Error al eliminar el bono.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+            document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false);
+        } 
+    },
+
+    // --- LÓGICA DE TIENDA (FLUJO DE 2 PASOS) ---
+    iniciarCompra: function(itemId) {
+        const item = AppState.tienda.items[itemId];
+        const statusMsg = document.getElementById('tienda-status-msg');
+        const buyBtn = document.getElementById(`buy-btn-${itemId}`);
+        
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
+        if (buyBtn) {
+            buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+            buyBtn.disabled = true;
+            buyBtn.querySelector('.btn-text').textContent = "Cargando...";
+        }
+        
+        statusMsg.textContent = "";
+
+        if (!item) {
+            AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
+        } else if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+            AppTransacciones.setError(statusMsg, "Este artículo ha expirado.");
+        } else {
+            AppUI.showTiendaStep2(itemId);
+        }
+        
+        // --- Corrección de Flujo: Restablecer el botón inmediatamente después de la validación ---
+        setTimeout(() => {
+             if (buyBtn) AppUI.updateTiendaButtonStates(); // Esta función restablece el estado si es necesario.
+        }, 50);
+    },
+
+    confirmarCompra: async function() {
+        const statusMsg = document.getElementById('tienda-step2-status-msg'); 
+        const submitBtn = document.getElementById('tienda-submit-step2-btn');
+        const btnText = document.getElementById('tienda-btn-text-step2');
+        
+        AppTransacciones.setLoadingState(submitBtn, btnText, true, 'Comprando...');
+
+        const itemId = AppState.tienda.selectedItem;
+        const alumnoNombre = document.getElementById('tienda-search-alumno-step2').value.trim();
+        const claveP2P = document.getElementById('tienda-clave-p2p-step2').value;
+
+        const item = AppState.tienda.items[itemId];
+        const student = AppState.datosAdicionales.allStudents.find(s => s.nombre === alumnoNombre);
+
+        let errorValidacion = "";
+        if (!itemId || !item) {
+            errorValidacion = "Error interno: Artículo no seleccionado.";
+        } else if (!alumnoNombre || !student) {
+            errorValidacion = "Alumno no encontrado. Por favor, seleccione su nombre de la lista.";
+        } else if (!claveP2P) {
+            errorValidacion = "Debe ingresar su Clave P2P.";
+        } else {
+            const costoFinal = Math.round(item.precio * (1 + AppConfig.TASA_ITBIS));
+            if (student.pinceles < costoFinal) {
+                errorValidacion = "Saldo insuficiente para completar la compra.";
+            } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+                errorValidacion = "El artículo está agotado.";
+            } else {
+                if (item.GruposPermitidos) {
+                    const allowedGroups = (item.GruposPermitidos || '').split(',').map(g => g.trim());
+                    if (!allowedGroups.includes(student.grupoNombre)) {
+                        errorValidacion = `Tu grupo (${student.grupoNombre}) no está autorizado para esta compra.`;
+                    }
+                }
+                if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+                    errorValidacion = "Este artículo ha expirado.";
+                }
+            }
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+            return;
+        }
+
+        AppTransacciones.setLoading(statusMsg, `Procesando compra de ${itemId}...`);
+        
+        try {
+            const payload = {
+                accion: 'comprar_item_tienda',
+                alumnoNombre: alumnoNombre,
+                claveP2P: claveP2P,
+                itemId: itemId
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Compra exitosa!");
+                
+                document.getElementById('tienda-clave-p2p-step2').value = "";
+                AppUI.showTiendaStep1();
+                
+                AppData.cargarDatos(false); 
+
+            } else {
+                throw new Error(result.message || "Error desconocido de la API.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+        }
+    },
+
+    crearActualizarItem: async function() {
+        const statusMsg = document.getElementById('tienda-admin-status-msg');
+        const submitBtn = document.getElementById('tienda-admin-submit-btn');
+        
+        const duracionHoras = parseInt(document.getElementById('tienda-admin-expiracion-input').value, 10);
+        
+        const checkedGroups = AppUI.getAdminGroupCheckboxSelection('tienda-admin-grupos-checkboxes-container');
+        const grupos_permitidos = checkedGroups.join(', ');
+
+        let expiracion_fecha = '';
+        if (!isNaN(duracionHoras) && duracionHoras > 0) {
+            const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
+            expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
+        }
+
+        const item = {
+            ItemID: document.getElementById('tienda-admin-itemid-input').value.trim(),
+            Nombre: document.getElementById('tienda-admin-nombre-input').value.trim(),
+            Descripcion: document.getElementById('tienda-admin-desc-input').value.trim(),
+            Tipo: document.getElementById('tienda-admin-tipo-input').value.trim(),
+            PrecioBase: parseInt(document.getElementById('tienda-admin-precio-input').value, 10),
+            Stock: parseInt(document.getElementById('tienda-admin-stock-input').value, 10),
+            GruposPermitidos: grupos_permitidos, 
+            ExpiracionFecha: expiracion_fecha 
+        };
+        
+        let errorValidacion = "";
+        if (!item.ItemID) {
+            errorValidacion = "El 'ItemID' es obligatorio.";
+        } else if (!item.Nombre) {
+            errorValidacion = "El 'Nombre' es obligatorio.";
+        } else if (isNaN(item.PrecioBase) || item.PrecioBase <= 0) {
+            errorValidacion = "El 'Precio Base' debe ser un número positivo.";
+        } else if (isNaN(item.Stock) || item.Stock < 0) {
+            errorValidacion = "El 'Stock' debe ser un número (0 o más).";
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            return;
+        }
+
+        AppTransacciones.setLoadingState(submitBtn, null, true, 'Guardando...');
+        AppTransacciones.setLoading(statusMsg, `Guardando artículo ${item.ItemID}...`);
+
+        try {
+            const payload = {
+                accion: 'admin_crear_item_tienda',
+                clave: AppConfig.CLAVE_MAESTRA,
+                item: item
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
+                AppUI.clearTiendaAdminForm();
+                await AppData.cargarDatos(false);
+                AppUI.renderTiendaItems();
+                
+            } else {
+                throw new Error(result.message || "Error al guardar el artículo.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar');
+        }
+    },
+    
+    eliminarBono: async function(claveBono) {
+        const statusMsg = document.getElementById('bono-admin-status-msg');
+        AppTransacciones.setLoading(statusMsg, `Eliminando bono ${claveBono}...`);
+        
+        document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = true);
+
+        try {
+            const payload = {
+                accion: 'admin_eliminar_bono',
+                clave: AppConfig.CLAVE_MAESTRA,
+                claveBono: claveBono
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
+                await AppData.cargarDatos(false);
+                AppUI.populateBonoList();
+                
+            } else {
+                throw new Error(result.message || "Error al eliminar el bono.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+            document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false);
+        } 
+    },
+
+    // --- LÓGICA DE TIENDA (FLUJO DE 2 PASOS) ---
+    iniciarCompra: function(itemId) {
+        const item = AppState.tienda.items[itemId];
+        const statusMsg = document.getElementById('tienda-status-msg');
+        const buyBtn = document.getElementById(`buy-btn-${itemId}`);
+        
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
+        if (buyBtn) {
+            buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+            buyBtn.disabled = true;
+            buyBtn.querySelector('.btn-text').textContent = "Cargando...";
+        }
+        
+        statusMsg.textContent = "";
+
+        if (!item) {
+            AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
+        } else if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+            AppTransacciones.setError(statusMsg, "Este artículo ha expirado.");
+        } else {
+            AppUI.showTiendaStep2(itemId);
+        }
+        
+        // --- Corrección de Flujo: Restablecer el botón inmediatamente después de la validación ---
+        setTimeout(() => {
+             if (buyBtn) AppUI.updateTiendaButtonStates(); // Esta función restablece el estado si es necesario.
+        }, 50);
+    },
+
+    confirmarCompra: async function() {
+        const statusMsg = document.getElementById('tienda-step2-status-msg'); 
+        const submitBtn = document.getElementById('tienda-submit-step2-btn');
+        const btnText = document.getElementById('tienda-btn-text-step2');
+        
+        AppTransacciones.setLoadingState(submitBtn, btnText, true, 'Comprando...');
+
+        const itemId = AppState.tienda.selectedItem;
+        const alumnoNombre = document.getElementById('tienda-search-alumno-step2').value.trim();
+        const claveP2P = document.getElementById('tienda-clave-p2p-step2').value;
+
+        const item = AppState.tienda.items[itemId];
+        const student = AppState.datosAdicionales.allStudents.find(s => s.nombre === alumnoNombre);
+
+        let errorValidacion = "";
+        if (!itemId || !item) {
+            errorValidacion = "Error interno: Artículo no seleccionado.";
+        } else if (!alumnoNombre || !student) {
+            errorValidacion = "Alumno no encontrado. Por favor, seleccione su nombre de la lista.";
+        } else if (!claveP2P) {
+            errorValidacion = "Debe ingresar su Clave P2P.";
+        } else {
+            const costoFinal = Math.round(item.precio * (1 + AppConfig.TASA_ITBIS));
+            if (student.pinceles < costoFinal) {
+                errorValidacion = "Saldo insuficiente para completar la compra.";
+            } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+                errorValidacion = "El artículo está agotado.";
+            } else {
+                if (item.GruposPermitidos) {
+                    const allowedGroups = (item.GruposPermitidos || '').split(',').map(g => g.trim());
+                    if (!allowedGroups.includes(student.grupoNombre)) {
+                        errorValidacion = `Tu grupo (${student.grupoNombre}) no está autorizado para esta compra.`;
+                    }
+                }
+                if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+                    errorValidacion = "Este artículo ha expirado.";
+                }
+            }
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+            return;
+        }
+
+        AppTransacciones.setLoading(statusMsg, `Procesando compra de ${itemId}...`);
+        
+        try {
+            const payload = {
+                accion: 'comprar_item_tienda',
+                alumnoNombre: alumnoNombre,
+                claveP2P: claveP2P,
+                itemId: itemId
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Compra exitosa!");
+                
+                document.getElementById('tienda-clave-p2p-step2').value = "";
+                AppUI.showTiendaStep1();
+                
+                AppData.cargarDatos(false); 
+
+            } else {
+                throw new Error(result.message || "Error desconocido de la API.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+        }
+    },
+
+    crearActualizarItem: async function() {
+        const statusMsg = document.getElementById('tienda-admin-status-msg');
+        const submitBtn = document.getElementById('tienda-admin-submit-btn');
+        
+        const duracionHoras = parseInt(document.getElementById('tienda-admin-expiracion-input').value, 10);
+        
+        const checkedGroups = AppUI.getAdminGroupCheckboxSelection('tienda-admin-grupos-checkboxes-container');
+        const grupos_permitidos = checkedGroups.join(', ');
+
+        let expiracion_fecha = '';
+        if (!isNaN(duracionHoras) && duracionHoras > 0) {
+            const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
+            expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
+        }
+
+        const item = {
+            ItemID: document.getElementById('tienda-admin-itemid-input').value.trim(),
+            Nombre: document.getElementById('tienda-admin-nombre-input').value.trim(),
+            Descripcion: document.getElementById('tienda-admin-desc-input').value.trim(),
+            Tipo: document.getElementById('tienda-admin-tipo-input').value.trim(),
+            PrecioBase: parseInt(document.getElementById('tienda-admin-precio-input').value, 10),
+            Stock: parseInt(document.getElementById('tienda-admin-stock-input').value, 10),
+            GruposPermitidos: grupos_permitidos, 
+            ExpiracionFecha: expiracion_fecha 
+        };
+        
+        let errorValidacion = "";
+        if (!item.ItemID) {
+            errorValidacion = "El 'ItemID' es obligatorio.";
+        } else if (!item.Nombre) {
+            errorValidacion = "El 'Nombre' es obligatorio.";
+        } else if (isNaN(item.PrecioBase) || item.PrecioBase <= 0) {
+            errorValidacion = "El 'Precio Base' debe ser un número positivo.";
+        } else if (isNaN(item.Stock) || item.Stock < 0) {
+            errorValidacion = "El 'Stock' debe ser un número (0 o más).";
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            return;
+        }
+
+        AppTransacciones.setLoadingState(submitBtn, null, true, 'Guardando...');
+        AppTransacciones.setLoading(statusMsg, `Guardando artículo ${item.ItemID}...`);
+
+        try {
+            const payload = {
+                accion: 'admin_crear_item_tienda',
+                clave: AppConfig.CLAVE_MAESTRA,
+                item: item
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
+                AppUI.clearTiendaAdminForm();
+                await AppData.cargarDatos(false);
+                AppUI.renderTiendaItems();
+                
+            } else {
+                throw new Error(result.message || "Error al guardar el artículo.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar');
+        }
+    },
+    
+    eliminarBono: async function(claveBono) {
+        const statusMsg = document.getElementById('bono-admin-status-msg');
+        AppTransacciones.setLoading(statusMsg, `Eliminando bono ${claveBono}...`);
+        
+        document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = true);
+
+        try {
+            const payload = {
+                accion: 'admin_eliminar_bono',
+                clave: AppConfig.CLAVE_MAESTRA,
+                claveBono: claveBono
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
+                await AppData.cargarDatos(false);
+                AppUI.populateBonoList();
+                
+            } else {
+                throw new Error(result.message || "Error al eliminar el bono.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+            document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false);
+        } 
+    },
+
+    // --- LÓGICA DE TIENDA (FLUJO DE 2 PASOS) ---
+    iniciarCompra: function(itemId) {
+        const item = AppState.tienda.items[itemId];
+        const statusMsg = document.getElementById('tienda-status-msg');
+        const buyBtn = document.getElementById(`buy-btn-${itemId}`);
+        
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
+        if (buyBtn) {
+            buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+            buyBtn.disabled = true;
+            buyBtn.querySelector('.btn-text').textContent = "Cargando...";
+        }
+        
+        statusMsg.textContent = "";
+
+        if (!item) {
+            AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
+        } else if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+            AppTransacciones.setError(statusMsg, "Este artículo ha expirado.");
+        } else {
+            AppUI.showTiendaStep2(itemId);
+        }
+        
+        // --- Corrección de Flujo: Restablecer el botón inmediatamente después de la validación ---
+        setTimeout(() => {
+             if (buyBtn) AppUI.updateTiendaButtonStates(); // Esta función restablece el estado si es necesario.
+        }, 50);
+    },
+
+    confirmarCompra: async function() {
+        const statusMsg = document.getElementById('tienda-step2-status-msg'); 
+        const submitBtn = document.getElementById('tienda-submit-step2-btn');
+        const btnText = document.getElementById('tienda-btn-text-step2');
+        
+        AppTransacciones.setLoadingState(submitBtn, btnText, true, 'Comprando...');
+
+        const itemId = AppState.tienda.selectedItem;
+        const alumnoNombre = document.getElementById('tienda-search-alumno-step2').value.trim();
+        const claveP2P = document.getElementById('tienda-clave-p2p-step2').value;
+
+        const item = AppState.tienda.items[itemId];
+        const student = AppState.datosAdicionales.allStudents.find(s => s.nombre === alumnoNombre);
+
+        let errorValidacion = "";
+        if (!itemId || !item) {
+            errorValidacion = "Error interno: Artículo no seleccionado.";
+        } else if (!alumnoNombre || !student) {
+            errorValidacion = "Alumno no encontrado. Por favor, seleccione su nombre de la lista.";
+        } else if (!claveP2P) {
+            errorValidacion = "Debe ingresar su Clave P2P.";
+        } else {
+            const costoFinal = Math.round(item.precio * (1 + AppConfig.TASA_ITBIS));
+            if (student.pinceles < costoFinal) {
+                errorValidacion = "Saldo insuficiente para completar la compra.";
+            } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+                errorValidacion = "El artículo está agotado.";
+            } else {
+                if (item.GruposPermitidos) {
+                    const allowedGroups = (item.GruposPermitidos || '').split(',').map(g => g.trim());
+                    if (!allowedGroups.includes(student.grupoNombre)) {
+                        errorValidacion = `Tu grupo (${student.grupoNombre}) no está autorizado para esta compra.`;
+                    }
+                }
+                if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+                    errorValidacion = "Este artículo ha expirado.";
+                }
+            }
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+            return;
+        }
+
+        AppTransacciones.setLoading(statusMsg, `Procesando compra de ${itemId}...`);
+        
+        try {
+            const payload = {
+                accion: 'comprar_item_tienda',
+                alumnoNombre: alumnoNombre,
+                claveP2P: claveP2P,
+                itemId: itemId
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Compra exitosa!");
+                
+                document.getElementById('tienda-clave-p2p-step2').value = "";
+                AppUI.showTiendaStep1();
+                
+                AppData.cargarDatos(false); 
+
+            } else {
+                throw new Error(result.message || "Error desconocido de la API.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+        }
+    },
+
+    crearActualizarItem: async function() {
+        const statusMsg = document.getElementById('tienda-admin-status-msg');
+        const submitBtn = document.getElementById('tienda-admin-submit-btn');
+        
+        const duracionHoras = parseInt(document.getElementById('tienda-admin-expiracion-input').value, 10);
+        
+        const checkedGroups = AppUI.getAdminGroupCheckboxSelection('tienda-admin-grupos-checkboxes-container');
+        const grupos_permitidos = checkedGroups.join(', ');
+
+        let expiracion_fecha = '';
+        if (!isNaN(duracionHoras) && duracionHoras > 0) {
+            const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
+            expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
+        }
+
+        const item = {
+            ItemID: document.getElementById('tienda-admin-itemid-input').value.trim(),
+            Nombre: document.getElementById('tienda-admin-nombre-input').value.trim(),
+            Descripcion: document.getElementById('tienda-admin-desc-input').value.trim(),
+            Tipo: document.getElementById('tienda-admin-tipo-input').value.trim(),
+            PrecioBase: parseInt(document.getElementById('tienda-admin-precio-input').value, 10),
+            Stock: parseInt(document.getElementById('tienda-admin-stock-input').value, 10),
+            GruposPermitidos: grupos_permitidos, 
+            ExpiracionFecha: expiracion_fecha 
+        };
+        
+        let errorValidacion = "";
+        if (!item.ItemID) {
+            errorValidacion = "El 'ItemID' es obligatorio.";
+        } else if (!item.Nombre) {
+            errorValidacion = "El 'Nombre' es obligatorio.";
+        } else if (isNaN(item.PrecioBase) || item.PrecioBase <= 0) {
+            errorValidacion = "El 'Precio Base' debe ser un número positivo.";
+        } else if (isNaN(item.Stock) || item.Stock < 0) {
+            errorValidacion = "El 'Stock' debe ser un número (0 o más).";
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            return;
+        }
+
+        AppTransacciones.setLoadingState(submitBtn, null, true, 'Guardando...');
+        AppTransacciones.setLoading(statusMsg, `Guardando artículo ${item.ItemID}...`);
+
+        try {
+            const payload = {
+                accion: 'admin_crear_item_tienda',
+                clave: AppConfig.CLAVE_MAESTRA,
+                item: item
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
+                AppUI.clearTiendaAdminForm();
+                await AppData.cargarDatos(false);
+                AppUI.renderTiendaItems();
+                
+            } else {
+                throw new Error(result.message || "Error al guardar el artículo.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar');
+        }
+    },
+    
+    eliminarBono: async function(claveBono) {
+        const statusMsg = document.getElementById('bono-admin-status-msg');
+        AppTransacciones.setLoading(statusMsg, `Eliminando bono ${claveBono}...`);
+        
+        document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = true);
+
+        try {
+            const payload = {
+                accion: 'admin_eliminar_bono',
+                clave: AppConfig.CLAVE_MAESTRA,
+                claveBono: claveBono
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
+                await AppData.cargarDatos(false);
+                AppUI.populateBonoList();
+                
+            } else {
+                throw new Error(result.message || "Error al eliminar el bono.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+            document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false);
+        } 
+    },
+
+    // --- LÓGICA DE TIENDA (FLUJO DE 2 PASOS) ---
+    iniciarCompra: function(itemId) {
+        const item = AppState.tienda.items[itemId];
+        const statusMsg = document.getElementById('tienda-status-msg');
+        const buyBtn = document.getElementById(`buy-btn-${itemId}`);
+        
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
+        if (buyBtn) {
+            buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+            buyBtn.disabled = true;
+            buyBtn.querySelector('.btn-text').textContent = "Cargando...";
+        }
+        
+        statusMsg.textContent = "";
+
+        if (!item) {
+            AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
+        } else if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+            AppTransacciones.setError(statusMsg, "Este artículo ha expirado.");
+        } else {
+            AppUI.showTiendaStep2(itemId);
+        }
+        
+        // --- Corrección de Flujo: Restablecer el botón inmediatamente después de la validación ---
+        setTimeout(() => {
+             if (buyBtn) AppUI.updateTiendaButtonStates(); // Esta función restablece el estado si es necesario.
+        }, 50);
+    },
+
+    confirmarCompra: async function() {
+        const statusMsg = document.getElementById('tienda-step2-status-msg'); 
+        const submitBtn = document.getElementById('tienda-submit-step2-btn');
+        const btnText = document.getElementById('tienda-btn-text-step2');
+        
+        AppTransacciones.setLoadingState(submitBtn, btnText, true, 'Comprando...');
+
+        const itemId = AppState.tienda.selectedItem;
+        const alumnoNombre = document.getElementById('tienda-search-alumno-step2').value.trim();
+        const claveP2P = document.getElementById('tienda-clave-p2p-step2').value;
+
+        const item = AppState.tienda.items[itemId];
+        const student = AppState.datosAdicionales.allStudents.find(s => s.nombre === alumnoNombre);
+
+        let errorValidacion = "";
+        if (!itemId || !item) {
+            errorValidacion = "Error interno: Artículo no seleccionado.";
+        } else if (!alumnoNombre || !student) {
+            errorValidacion = "Alumno no encontrado. Por favor, seleccione su nombre de la lista.";
+        } else if (!claveP2P) {
+            errorValidacion = "Debe ingresar su Clave P2P.";
+        } else {
+            const costoFinal = Math.round(item.precio * (1 + AppConfig.TASA_ITBIS));
+            if (student.pinceles < costoFinal) {
+                errorValidacion = "Saldo insuficiente para completar la compra.";
+            } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+                errorValidacion = "El artículo está agotado.";
+            } else {
+                if (item.GruposPermitidos) {
+                    const allowedGroups = (item.GruposPermitidos || '').split(',').map(g => g.trim());
+                    if (!allowedGroups.includes(student.grupoNombre)) {
+                        errorValidacion = `Tu grupo (${student.grupoNombre}) no está autorizado para esta compra.`;
+                    }
+                }
+                if (item.ExpiracionFecha && new Date(item.ExpiracionFecha).getTime() < Date.now()) {
+                    errorValidacion = "Este artículo ha expirado.";
+                }
+            }
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+            return;
+        }
+
+        AppTransacciones.setLoading(statusMsg, `Procesando compra de ${itemId}...`);
+        
+        try {
+            const payload = {
+                accion: 'comprar_item_tienda',
+                alumnoNombre: alumnoNombre,
+                claveP2P: claveP2P,
+                itemId: itemId
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Compra exitosa!");
+                
+                document.getElementById('tienda-clave-p2p-step2').value = "";
+                AppUI.showTiendaStep1();
+                
+                AppData.cargarDatos(false); 
+
+            } else {
+                throw new Error(result.message || "Error desconocido de la API.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, btnText, false, 'Confirmar Compra');
+        }
+    },
+
+    crearActualizarItem: async function() {
+        const statusMsg = document.getElementById('tienda-admin-status-msg');
+        const submitBtn = document.getElementById('tienda-admin-submit-btn');
+        
+        const duracionHoras = parseInt(document.getElementById('tienda-admin-expiracion-input').value, 10);
+        
+        const checkedGroups = AppUI.getAdminGroupCheckboxSelection('tienda-admin-grupos-checkboxes-container');
+        const grupos_permitidos = checkedGroups.join(', ');
+
+        let expiracion_fecha = '';
+        if (!isNaN(duracionHoras) && duracionHoras > 0) {
+            const expiryDate = new Date(Date.now() + duracionHoras * 60 * 60 * 1000);
+            expiracion_fecha = AppFormat.toLocalISOString(expiryDate); 
+        }
+
+        const item = {
+            ItemID: document.getElementById('tienda-admin-itemid-input').value.trim(),
+            Nombre: document.getElementById('tienda-admin-nombre-input').value.trim(),
+            Descripcion: document.getElementById('tienda-admin-desc-input').value.trim(),
+            Tipo: document.getElementById('tienda-admin-tipo-input').value.trim(),
+            PrecioBase: parseInt(document.getElementById('tienda-admin-precio-input').value, 10),
+            Stock: parseInt(document.getElementById('tienda-admin-stock-input').value, 10),
+            GruposPermitidos: grupos_permitidos, 
+            ExpiracionFecha: expiracion_fecha 
+        };
+        
+        let errorValidacion = "";
+        if (!item.ItemID) {
+            errorValidacion = "El 'ItemID' es obligatorio.";
+        } else if (!item.Nombre) {
+            errorValidacion = "El 'Nombre' es obligatorio.";
+        } else if (isNaN(item.PrecioBase) || item.PrecioBase <= 0) {
+            errorValidacion = "El 'Precio Base' debe ser un número positivo.";
+        } else if (isNaN(item.Stock) || item.Stock < 0) {
+            errorValidacion = "El 'Stock' debe ser un número (0 o más).";
+        }
+        
+        if (errorValidacion) {
+            AppTransacciones.setError(statusMsg, errorValidacion);
+            return;
+        }
+
+        AppTransacciones.setLoadingState(submitBtn, null, true, 'Guardando...');
+        AppTransacciones.setLoading(statusMsg, `Guardando artículo ${item.ItemID}...`);
+
+        try {
+            const payload = {
+                accion: 'admin_crear_item_tienda',
+                clave: AppConfig.CLAVE_MAESTRA,
+                item: item
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Artículo guardado con éxito!");
+                AppUI.clearTiendaAdminForm();
+                await AppData.cargarDatos(false);
+                AppUI.renderTiendaItems();
+                
+            } else {
+                throw new Error(result.message || "Error al guardar el artículo.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+        } finally {
+            AppTransacciones.setLoadingState(submitBtn, null, false, 'Crear / Actualizar');
+        }
+    },
+    
+    eliminarBono: async function(claveBono) {
+        const statusMsg = document.getElementById('bono-admin-status-msg');
+        AppTransacciones.setLoading(statusMsg, `Eliminando bono ${claveBono}...`);
+        
+        document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = true);
+
+        try {
+            const payload = {
+                accion: 'admin_eliminar_bono',
+                clave: AppConfig.CLAVE_MAESTRA,
+                claveBono: claveBono
+            };
+
+            const response = await AppTransacciones.fetchWithExponentialBackoff(AppConfig.API_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (result.success === true) {
+                AppTransacciones.setSuccess(statusMsg, result.message || "¡Bono eliminado con éxito!");
+                await AppData.cargarDatos(false);
+                AppUI.populateBonoList();
+                
+            } else {
+                throw new Error(result.message || "Error al eliminar el bono.");
+            }
+
+        } catch (error) {
+            AppTransacciones.setError(statusMsg, error.message);
+            document.querySelectorAll('.delete-bono-btn').forEach(btn => btn.disabled = false);
+        } 
+    },
+
+    // --- LÓGICA DE TIENDA (FLUJO DE 2 PASOS) ---
+    iniciarCompra: function(itemId) {
+        const item = AppState.tienda.items[itemId];
+        const statusMsg = document.getElementById('tienda-status-msg');
+        const buyBtn = document.getElementById(`buy-btn-${itemId}`);
+        
+        // --- Corrección de Flujo: Deshabilitar temporalmente el botón ---
+        if (buyBtn) {
+            buyBtn.classList.remove('bg-white', 'hover:bg-amber-50', 'text-amber-600', 'border-amber-600');
+            buyBtn.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-300', 'cursor-not-allowed', 'shadow-none');
+            buyBtn.disabled = true;
+            buyBtn.querySelector('.btn-text').textContent = "Cargando...";
+        }
+        
+        statusMsg.textContent = "";
+
+        if (!item) {
+            AppTransacciones.setError(statusMsg, "Error interno: Artículo no encontrado.");
+        } else if (item.stock <= 0 && item.ItemID !== 'filantropo') {
+            AppTransacciones.setError(statusMsg, "El artículo está agotado.");
