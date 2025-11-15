@@ -362,7 +362,16 @@ const AppUI = {
         }
         
         document.getElementById('bonos-modal-close').addEventListener('click', () => AppUI.hideModal('bonos-modal'));
-        document.getElementById('tienda-btn').addEventListener('click', () => AppUI.showTiendaModal());
+        
+        // FIX: Listener para el botón de tienda
+        const tiendaBtn = document.getElementById('tienda-btn');
+        if (tiendaBtn) {
+            tiendaBtn.addEventListener('click', () => AppUI.showTiendaModal());
+        }
+        
+        // FIX: Listener para el botón de cierre de la tienda (X)
+        document.getElementById('tienda-modal-close').addEventListener('click', () => AppUI.hideModal('tienda-modal'));
+        
         // Reglas modal ELIMINADO
         
         // Listeners P2P (Ahora en el modal combinado)
