@@ -162,9 +162,9 @@ body {
 /* =================================================================== */
 /* Hero Section Dinámica (Carrusel SLIDE) */
 /* =================================================================== */
-/* CAMBIO: min-height reducido de 300px a 250px para hacerlo más compacto (Acción 3.1) */
+/* AJUSTE V29.4: Reducción de min-height para evitar scroll vertical en la homepage. */
 .hero-section-bpd {
-    min-height: 250px;
+    min-height: 220px;
 }
 
 /* Estilo base de los slides */
