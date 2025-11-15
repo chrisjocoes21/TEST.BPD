@@ -354,10 +354,15 @@ const AppUI = {
         // Listeners P2P/Bonos/Tienda/Reglas
         document.getElementById('modal-cancel').addEventListener('click', () => AppUI.hideModal('gestion-modal'));
         document.getElementById('transaccion-modal-close-btn').addEventListener('click', () => AppUI.hideModal('transaccion-modal'));
-        document.getElementById('bonos-btn').addEventListener('click', () => AppUI.showBonoModal());
+        
+        // FIX: Listener para el botón de bonos, asegurando que siempre intenta abrir el modal.
+        const bonosBtn = document.getElementById('bonos-btn');
+        if (bonosBtn) {
+            bonosBtn.addEventListener('click', () => AppUI.showBonoModal());
+        }
+        
         document.getElementById('bonos-modal-close').addEventListener('click', () => AppUI.hideModal('bonos-modal'));
         document.getElementById('tienda-btn').addEventListener('click', () => AppUI.showTiendaModal());
-        document.getElementById('tienda-modal-close').addEventListener('click', () => AppUI.hideModal('tienda-modal'));
         // Reglas modal ELIMINADO
         
         // Listeners P2P (Ahora en el modal combinado)
@@ -940,7 +945,7 @@ const AppUI = {
     // --- FUNCIONES DE BONOS (FLUJO DE 2 PASOS) ---
     
     showBonoModal: function() {
-        // PROBLEMA 3 (SOLUCIÓN): Ya no hay un 'if (!AppState.datosActuales) return;' aquí.
+        // CORRECCIÓN: Se asegura que el flujo de apertura se inicia siempre, incluso si los datos aún están cargando.
         AppUI.showBonoStep1();
         AppUI.showModal('bonos-modal');
 
