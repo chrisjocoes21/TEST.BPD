@@ -162,7 +162,7 @@ body {
 /* =================================================================== */
 /* Hero Section Dinámica (Carrusel SLIDE) */
 /* =================================================================== */
-/* CAMBIO: min-height reducido de 300px a 250px para hacerlo más compacto */
+/* CAMBIO: min-height reducido de 300px a 250px para hacerlo más compacto (Acción 3.1) */
 .hero-section-bpd {
     min-height: 250px;
 }
