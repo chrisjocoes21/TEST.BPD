@@ -10,7 +10,7 @@ const AppConfig = {
     CACHE_DURATION: 300000,
     
     APP_STATUS: 'RC', 
-    APP_VERSION: 'v28.1 - Sin Scroll', 
+    APP_VERSION: 'v29.0 - Académico', 
     
     // --- REGLAS DE ECONOMÍA REBALANCEADA Y FLEXIBLE ---
     IMPUESTO_P2P_TASA: 0.05,        // Antes 0.10
@@ -79,7 +79,7 @@ const AppState = {
         selectedItem: null,
     },
     
-    // ESTADO: Hero ahora tiene 4 slides (0-Home, 1-P2P, 2-Prestamo, 3-Deposito)
+    // ESTADO: Hero ahora tiene 4 slides (0-Home, 1-Transferencia, 2-Prestamo, 3-Deposito)
     heroSlideIndex: 0,
     heroSlideCount: 4, 
 };
@@ -2943,7 +2943,7 @@ const AppContent = {
     terminosYCondiciones: `
         <h2 class="text-xl font-bold color-dorado-main mb-4">CONTRATO DE TÉRMINOS Y CONDICIONES DE USO DEL BANCO DEL PINCEL DORADO (BPD)</h2>
         <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">I. DEFINICIONES Y ALCANCE</h3>
-        <p>El uso de cualquiera de los servicios de banca virtual del BPD (P2P, Préstamos, Depósitos, Tienda) implica la total e incondicional aceptación de este Contrato y del Reglamento General del BPD.</p>
+        <p>El uso de cualquiera de los servicios de banca virtual del BPD (Transferencias entre Cuentas, Préstamos, Depósitos, Tienda) implica la total e incondicional aceptación de este Contrato y del Reglamento General del BPD.</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
             <li><strong>Usuario:</strong> Cualquier alumno activo.</li>
             <li><strong>Pinceles (ℙ):</strong> Unidad monetaria virtual sin valor fuera del ecosistema académico.</li>
@@ -2951,10 +2951,10 @@ const AppContent = {
             <li><strong>Tesorería:</strong> Fondo central del BPD para garantizar la sostenibilidad.</li>
         </ul>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">II. SERVICIO DE TRANSFERENCIAS P2P</h3>
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">II. SERVICIO DE TRANSFERENCIAS ENTRE CUENTAS</h3>
         <p>Permite la transferencia de Pinceles entre Usuarios.</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li><strong>Irrevocabilidad:</strong> Toda Transacción P2P confirmada es definitiva. El BPD no ofrece reembolsos salvo error técnico imputable al sistema.</li>
+            <li><strong>Irrevocabilidad:</strong> Toda Transferencia confirmada es definitiva. El BPD no ofrece reembolsos salvo error técnico imputable al sistema.</li>
             <li><strong>Impuesto a la Transacción:</strong> Aplica un impuesto/comisión del <strong>${AppConfig.IMPUESTO_P2P_TASA * 100}%</strong> sobre el monto enviado, debitado del Remitente, destinado a la Tesorería.</li>
             <li><strong>Responsabilidad de la Clave:</strong> El Usuario es el único responsable de la custodia de su Clave P2P.</li>
         </ul>
@@ -2975,9 +2975,9 @@ const AppContent = {
             <li><strong>Tributación:</strong> Los intereses generados están exentos de impuestos (0% de retención).</li>
         </ul>
 
-        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">V. SANCIONES Y ACTOS ILÍCITOS</h3>
-        <p>Queda estrictamente prohibido utilizar cualquier servicio del BPD (incluyendo P2P) para fraude, lavado de activos (mover dinero sin justificación lícita), o cualquier actividad que contravenga las Normas de Convivencia.</p>
-        <p>El incumplimiento podrá ser sancionado con la congelación de la cuenta, la reversión de transacciones, o la exclusión permanente del sistema. El BPD se reserva el derecho de auditar cualquier transacción que considere atípica.</p>
+        <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">V. SANCIONES Y USO INDEBIDO</h3>
+        <p>Queda estrictamente prohibido utilizar cualquier servicio del BPD para cualquier actividad que contravenga las Normas de Convivencia y el Reglamento Académico.</p>
+        <p>El incumplimiento podrá ser sancionado con la congelación de la cuenta, la reversión de transacciones, o la exclusión permanente del sistema. La naturaleza y la duración de la sanción serán determinadas únicamente por los administradores del BPD.</p>
     `,
     
     // Contenido nuevo para la política de privacidad
@@ -2989,7 +2989,7 @@ const AppContent = {
         <p>El BPD recopila y procesa los siguientes tipos de datos:</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
             <li><strong>Datos de Identificación:</strong> Nombre de Usuario y Grupo Académico.</li>
-            <li><strong>Datos Financieros Internos:</strong> Saldo de Pinceles (ℙ), historial de Transacciones (P2P, Depósitos, Préstamos), Clave P2P (almacenada en formato encriptado, nunca visible).</li>
+            <li><strong>Datos Financieros Internos:</strong> Saldo de Pinceles (ℙ), historial de Transacciones (Transferencias entre Cuentas, Depósitos, Préstamos), Clave P2P (almacenada en formato encriptado, nunca visible).</li>
             <li><strong>Metadatos:</strong> Fecha, hora y tipo de transacción.</li>
         </ul>
         <p class="mt-2 font-semibold">El BPD NO recopila información personal sensible (como direcciones de correo, números de teléfono o datos bancarios del mundo real).</p>
@@ -2997,9 +2997,9 @@ const AppContent = {
         <h3 class="text-lg font-semibold text-slate-800 mt-6 mb-2">II. FINALIDAD DEL USO DE DATOS</h3>
         <p>La información recopilada tiene como único fin:</p>
         <ul class="list-disc list-inside ml-4 space-y-1 text-sm">
-            <li>Garantizar la correcta ejecución de las transacciones (ej. transferencias P2P).</li>
+            <li>Garantizar la correcta ejecución de las transacciones (ej. Transferencias entre Cuentas).</li>
             <li>Calcular saldos, intereses y cuotas de préstamos.</li>
-            <li>Monitorear la estabilidad económica y detectar patrones de fraude o actividad ilícita.</li>
+            <li>Monitorear la estabilidad económica y detectar patrones de actividad atípica.</li>
             <li>Proveer reportes de desempeño financiero a los administradores del BPD.</li>
         </ul>
 
