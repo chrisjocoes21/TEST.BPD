@@ -10,7 +10,7 @@ const AppConfig = {
     CACHE_DURATION: 300000,
     
     APP_STATUS: 'RC', 
-    APP_VERSION: 'v29.7 - Terminología Legal', 
+    APP_VERSION: 'v29.7', 
     
     // --- REGLAS DE ECONOMÍA REBALANCEADA Y FLEXIBLE (AJUSTE) ---
     IMPUESTO_P2P_TASA: 0.01,        // 1.0%
@@ -2989,7 +2989,7 @@ const AppContent = {
             <li><strong>Datos Financieros:</strong> Saldo actual de Pinceles (ℙ), el historial completo de Transacciones y la Clave P2P (gestionada de forma segura).</li>
             <li><strong>Metadatos:</strong> Registros automáticos de la fecha, hora y tipo de cada operación.</li>
         </ul>
-        <p class="mt-2 font-semibold">El BPD garantiza que no recopila ni almacena, bajo ninguna circunstancia, datos personales sensibles **externos** o información bancaria **externa**.</p>
+        <p class="mt-2 font-semibold">El BPD garantiza que no recopila ni almacena, bajo ninguna circunstancia, datos personales sensibles externos.</p>
 
         <strong class="text-lg font-semibold text-slate-800 mt-6 mb-2 block">III. Propósito de la Información</strong>
         <p>El procesamiento de la información tiene por objeto exclusivo:</p>
